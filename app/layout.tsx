@@ -42,7 +42,7 @@ export default function RootLayout({
         <div className="relative min-h-screen">
           {/* Imagen de fondo */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-gradient-to-br bg-black/40 via-black/30 to-transparent z-0"
+            className="absolute inset-0 bg-cover bg-center bg-black/40"
             style={{ backgroundImage: "url('/bg-fitcode.jpeg')" }}
           />
 

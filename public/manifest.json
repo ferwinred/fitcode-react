@@ -1,0 +1,13 @@
+{
+  "name": "FitCode",
+  "short_name": "FitCode",
+  "description": "Tu plataforma de entrenamiento inteligente",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2744",
+  "theme_color": "#1a2744",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

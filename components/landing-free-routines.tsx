@@ -6,30 +6,18 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { DifficultyBadge } from "@/components/badges";
-import { mockRoutines } from "@/lib/mock-data";
-
-interface Routine {
-  id: number;
-  title: string;
-  difficulty: string;
-  duration_minutes: number;
-  workouts_count: number;
-  thumbnail_url: string;
-  is_free: boolean;
-}
+import { getFreeRoutines } from "@/lib/services/data-service";
+import type { RoutineView } from "@/lib/types";
 
 export default function LandingFreeRoutines() {
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [routines, setRoutines] = useState<RoutineView[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: reemplazar con fetch(`/api/routines?free=true&limit=2`) cuando el backend esté listo
-    const load = async () => {
-      await new Promise((r) => setTimeout(r, 0));
-      setRoutines(mockRoutines.filter((r) => r.is_free).slice(0, 2));
+    getFreeRoutines(2).then((data) => {
+      setRoutines(data);
       setLoading(false);
-    };
-    load();
+    });
   }, []);
 
   return (
@@ -44,9 +32,7 @@ export default function LandingFreeRoutines() {
 
         {loading ? (
           <div className="grid sm:grid-cols-2 gap-5">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted animate-pulse" />
-            ))}
+            {[1, 2].map((i) => <div key={i} className="h-48 rounded-xl bg-muted animate-pulse" />)}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-5">
@@ -55,7 +41,7 @@ export default function LandingFreeRoutines() {
                 <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group">
                   <div className="relative h-48 bg-muted overflow-hidden">
                     <Image
-                      src={r.thumbnail_url}
+                      src={r.thumbnail_url ?? ''}
                       alt={r.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 50vw"
@@ -65,7 +51,7 @@ export default function LandingFreeRoutines() {
                     <div className="absolute bottom-3 left-3 right-3">
                       <p className="text-white font-bold">{r.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <DifficultyBadge difficulty={r.difficulty} />
+                        <DifficultyBadge difficulty={r.difficulty ?? 'beginner'} />
                         <span className="text-white/70 text-xs">{r.duration_minutes} min · {r.workouts_count} ejercicios</span>
                       </div>
                     </div>

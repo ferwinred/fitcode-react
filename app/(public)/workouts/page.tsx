@@ -33,9 +33,9 @@ export default function WorkoutsPage() {
           <Link key={w.id} href={`/workouts/${w.id}`}>
             <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group h-full">
               <div className="relative h-44 bg-muted overflow-hidden">
-                <Image src={w.thumbnail_url} alt={w.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                <Image src={w.thumbnail_url ?? ''} alt={w.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute top-2 left-2 flex gap-1">
-                  <FreeBadge isFree={w.is_free} />
+                  <FreeBadge isFree={w.is_free ?? false} />
                 </div>
               </div>
               <CardContent className="p-4 space-y-2">
@@ -49,9 +49,9 @@ export default function WorkoutsPage() {
                   <span>🏋️ {w.equipment}</span>
                 </div>
                 <div className="flex gap-3 text-xs text-muted-foreground">
-                  <span>{w.sets} series</span>
-                  <span>{w.reps} reps</span>
-                  <span>⏱ {w.rest_seconds}s descanso</span>
+                  <span>{w.sets ?? '—'} series</span>
+                  <span>{w.reps ?? '—'} reps</span>
+                  <span>⏱ {w.rest_seconds ?? '—'}s descanso</span>
                 </div>
               </CardContent>
             </Card>

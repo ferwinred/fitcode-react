@@ -43,8 +43,8 @@ export default function FavoritesPage() {
             <Link key={w.id} href={`/workouts/${w.id}`}>
               <Card className="overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group">
                 <div className="relative h-40 bg-muted overflow-hidden">
-                  <Image src={w.thumbnail_url} alt={w.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-2 left-2"><FreeBadge isFree={w.is_free} /></div>
+                  <Image src={w.thumbnail_url ?? ''} alt={w.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute top-2 left-2"><FreeBadge isFree={w.is_free ?? false} /></div>
                 </div>
                 <CardContent className="p-3 space-y-1">
                   <div className="flex items-start justify-between gap-1">
@@ -65,14 +65,14 @@ export default function FavoritesPage() {
             <Link key={v.id} href={`/videos/${v.id}`}>
               <Card className="overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group">
                 <div className="relative h-44 bg-muted overflow-hidden">
-                  <Image src={v.thumbnail_url} alt={v.title} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <Image src={v.thumbnail_url ?? ''} alt={v.title} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
                       <Play className="w-5 h-5 text-gray-900 ml-0.5" />
                     </div>
                   </div>
                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
-                    {formatDuration(v.duration_seconds)}
+                    {formatDuration(v.duration_seconds ?? 0)}
                   </div>
                 </div>
                 <CardContent className="p-3">

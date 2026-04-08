@@ -6,30 +6,19 @@ import Image from "next/image";
 import { ArrowRight, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FreeBadge } from "@/components/badges";
-import { mockVideos, formatDuration } from "@/lib/mock-data";
-
-interface Video {
-  id: number;
-  title: string;
-  thumbnail_url: string;
-  duration_seconds: number;
-  video_type: string;
-  likes: number;
-  is_free: boolean;
-}
+import { getFreeVideos } from "@/lib/services/data-service";
+import { formatDuration } from "@/lib/mock-data";
+import type { WorkoutVideoView } from "@/lib/types";
 
 export default function LandingFreeVideos() {
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videos, setVideos] = useState<WorkoutVideoView[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: reemplazar con fetch(`/api/videos?free=true&limit=2`) cuando el backend esté listo
-    const load = async () => {
-      await new Promise((r) => setTimeout(r, 0));
-      setVideos(mockVideos.filter((v) => v.is_free).slice(0, 2));
+    getFreeVideos(2).then((data) => {
+      setVideos(data);
       setLoading(false);
-    };
-    load();
+    });
   }, []);
 
   return (
@@ -44,9 +33,7 @@ export default function LandingFreeVideos() {
 
         {loading ? (
           <div className="grid sm:grid-cols-2 gap-5">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted animate-pulse" />
-            ))}
+            {[1, 2].map((i) => <div key={i} className="h-48 rounded-xl bg-muted animate-pulse" />)}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-5">
@@ -55,7 +42,7 @@ export default function LandingFreeVideos() {
                 <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group">
                   <div className="relative h-48 bg-muted overflow-hidden">
                     <Image
-                      src={v.thumbnail_url}
+                      src={v.thumbnail_url ?? ''}
                       alt={v.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 50vw"
@@ -66,11 +53,9 @@ export default function LandingFreeVideos() {
                         <Play className="w-5 h-5 text-gray-900 ml-0.5" />
                       </div>
                     </div>
-                    <div className="absolute top-2 left-2">
-                      <FreeBadge isFree={v.is_free} />
-                    </div>
+                    <div className="absolute top-2 left-2"><FreeBadge isFree={v.is_free} /></div>
                     <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
-                      {formatDuration(v.duration_seconds)}
+                      {formatDuration(v.duration_seconds ?? 0)}
                     </div>
                   </div>
                   <CardContent className="p-4">

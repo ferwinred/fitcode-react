@@ -14,23 +14,25 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
 
   const [currentSet, setCurrentSet] = useState(1);
   const [phase, setPhase] = useState<"work" | "rest" | "done">("work");
-  const [timeLeft, setTimeLeft] = useState(workout.rest_seconds);
+  const restSeconds = workout.rest_seconds ?? 60;
+  const sets = workout.sets ?? 3;
+  const [timeLeft, setTimeLeft] = useState(restSeconds);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (running && timeLeft > 0) {
-      intervalRef.current = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+      intervalRef.current = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     } else if (timeLeft === 0 && running) {
       setRunning(false);
       if (phase === "work") {
         setPhase("rest");
-        setTimeLeft(workout.rest_seconds);
+        setTimeLeft(restSeconds);
       } else if (phase === "rest") {
-        if (currentSet < workout.sets) {
+        if (currentSet < sets) {
           setCurrentSet((s) => s + 1);
           setPhase("work");
-          setTimeLeft(workout.rest_seconds);
+          setTimeLeft(restSeconds);
         } else {
           setPhase("done");
         }
@@ -43,7 +45,7 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
     setRunning(false);
     setCurrentSet(1);
     setPhase("work");
-    setTimeLeft(workout.rest_seconds);
+    setTimeLeft(restSeconds);
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
@@ -63,9 +65,9 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
         {/* Left: info */}
         <div className="space-y-5">
           <div className="relative h-56 rounded-2xl overflow-hidden bg-muted">
-            <Image src={workout.thumbnail_url} alt={workout.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+            <Image src={workout.thumbnail_url ?? ''} alt={workout.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
-              <FreeBadge isFree={workout.is_free} />
+              <FreeBadge isFree={workout.is_free ?? false} />
               <DifficultyBadge difficulty={workout.difficulty} />
             </div>
           </div>
@@ -79,8 +81,8 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
             {[
               ["💪", "Músculo", workout.main_muscle_group],
               ["🏋️", "Equipo", workout.equipment],
-              ["🔁", "Series", `${workout.sets} series`],
-              ["📊", "Reps", workout.reps],
+              ["🔁", "Series", `${sets} series`],
+              ["📊", "Reps", workout.reps ?? "—"],
             ].map(([icon, label, value]) => (
               <div key={label} className="bg-muted/50 rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">{icon} {label}</p>
@@ -110,7 +112,7 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
           <Card className="border-border">
             <CardContent className="p-6 text-center space-y-4">
               <p className="text-sm font-medium text-muted-foreground">
-                Serie {currentSet} de {workout.sets}
+                Serie {currentSet} de {sets}
               </p>
               <p className={`text-sm font-semibold ${phaseColor}`}>{phaseLabel}</p>
 
@@ -122,7 +124,7 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
                     cx="50" cy="50" r="44" fill="none"
                     stroke="currentColor" strokeWidth="6"
                     strokeDasharray={`${2 * Math.PI * 44}`}
-                    strokeDashoffset={`${2 * Math.PI * 44 * (1 - timeLeft / workout.rest_seconds)}`}
+                    strokeDashoffset={`${2 * Math.PI * 44 * (1 - timeLeft / restSeconds)}`}
                     strokeLinecap="round"
                     className={phase === "work" ? "text-amber-400" : "text-blue-400"}
                     style={{ transition: "stroke-dashoffset 1s linear" }}
@@ -164,7 +166,7 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
           <div className="space-y-2">
             <p className="text-sm font-medium">Progreso de series</p>
             <div className="flex gap-2">
-              {Array.from({ length: workout.sets }).map((_, i) => (
+              {Array.from({ length: sets }).map((_, i) => (
                 <div
                   key={i}
                   className={`flex-1 h-2 rounded-full transition-colors ${

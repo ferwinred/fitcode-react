@@ -6,33 +6,18 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge, FreeBadge } from "@/components/badges";
-import { mockWorkouts } from "@/lib/mock-data";
-
-interface Workout {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: string;
-  main_muscle_group: string;
-  equipment: string;
-  thumbnail_url: string;
-  sets: number;
-  reps: string;
-  is_free: boolean;
-}
+import { getFreeWorkouts } from "@/lib/services/data-service";
+import type { WorkoutView } from "@/lib/types";
 
 export default function LandingFreeWorkouts() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutView[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: reemplazar con fetch(`/api/workouts?free=true&limit=3`) cuando el backend esté listo
-    const load = async () => {
-      await new Promise((r) => setTimeout(r, 0));
-      setWorkouts(mockWorkouts.filter((w) => w.is_free).slice(0, 3));
+    getFreeWorkouts(3).then((data) => {
+      setWorkouts(data);
       setLoading(false);
-    };
-    load();
+    });
   }, []);
 
   return (
@@ -47,9 +32,7 @@ export default function LandingFreeWorkouts() {
 
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 rounded-xl bg-muted animate-pulse" />
-            ))}
+            {[1, 2, 3].map((i) => <div key={i} className="h-64 rounded-xl bg-muted animate-pulse" />)}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -58,15 +41,13 @@ export default function LandingFreeWorkouts() {
                 <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group">
                   <div className="relative h-44 bg-muted overflow-hidden">
                     <Image
-                      src={w.thumbnail_url}
+                      src={w.thumbnail_url ?? ''}
                       alt={w.title}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-2 left-2">
-                      <FreeBadge isFree={w.is_free} />
-                    </div>
+                    <div className="absolute top-2 left-2"><FreeBadge isFree={w.is_free} /></div>
                   </div>
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -74,7 +55,7 @@ export default function LandingFreeWorkouts() {
                       <DifficultyBadge difficulty={w.difficulty} />
                     </div>
                     <p className="text-xs text-muted-foreground">{w.main_muscle_group} · {w.equipment}</p>
-                    <p className="text-xs text-muted-foreground">{w.sets} series · {w.reps} reps</p>
+                    <p className="text-xs text-muted-foreground">{w.sets ?? '—'} series · {w.reps ?? '—'} reps</p>
                   </CardContent>
                 </Card>
               </Link>

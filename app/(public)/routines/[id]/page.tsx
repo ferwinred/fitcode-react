@@ -19,12 +19,12 @@ export default function RoutineDetailPage({ params }: { params: { id: string } }
 
       {/* Header */}
       <div className="relative h-64 rounded-2xl overflow-hidden mb-8">
-        <Image src={routine.thumbnail_url} alt={routine.title} fill sizes="100vw" className="object-cover" />
+        <Image src={routine.thumbnail_url ?? ''} alt={routine.title} fill sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex gap-2 mb-2">
             <FreeBadge isFree={routine.is_free} />
-            <DifficultyBadge difficulty={routine.difficulty} />
+            <DifficultyBadge difficulty={routine.difficulty ?? 'beginner'} />
           </div>
           <h1 className="text-3xl font-extrabold text-white">{routine.title}</h1>
         </div>
@@ -72,11 +72,11 @@ export default function RoutineDetailPage({ params }: { params: { id: string } }
                       {i + 1}
                     </div>
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                      <Image src={w.thumbnail_url} alt={w.title} fill sizes="48px" className="object-cover" />
+                      <Image src={w.thumbnail_url ?? ''} alt={w.title} fill sizes="48px" className="object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{w.title}</p>
-                      <p className="text-xs text-muted-foreground">{w.sets} series · {w.reps} reps · {w.rest_seconds}s descanso</p>
+                      <p className="text-xs text-muted-foreground">{w.sets ?? '—'} series · {w.reps ?? '—'} reps · {w.rest_seconds ?? '—'}s descanso</p>
                     </div>
                     <DifficultyBadge difficulty={w.difficulty} />
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />

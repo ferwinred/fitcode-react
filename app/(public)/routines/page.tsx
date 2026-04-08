@@ -31,7 +31,7 @@ export default function RoutinesPage() {
           <Link key={r.id} href={`/routines/${r.id}`}>
             <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group h-full">
               <div className="relative h-48 bg-muted overflow-hidden">
-                <Image src={r.thumbnail_url} alt={r.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                <Image src={r.thumbnail_url ?? ''} alt={r.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute top-3 left-3 flex gap-1">
                   <FreeBadge isFree={r.is_free} />
@@ -48,7 +48,7 @@ export default function RoutinesPage() {
                   <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400 text-amber-400" />{r.rating}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <DifficultyBadge difficulty={r.difficulty} />
+                  <DifficultyBadge difficulty={r.difficulty ?? 'beginner'} />
                   <div className="flex gap-1">
                     {r.categories.map((c) => (
                       <span key={c} className="text-xs bg-muted px-2 py-0.5 rounded-full">{c}</span>

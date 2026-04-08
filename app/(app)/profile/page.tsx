@@ -3,7 +3,10 @@ import Image from "next/image";
 import { User, Trophy, Heart, Bell, CreditCard, Dumbbell, Flame, Settings, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockUser, mockUserRoutines, mockRewards } from "@/lib/mock-data";
+import { mockUser, mockUserRoutines, mockUserRewards, getRewardIcon } from "@/lib/mock-data";
+import type { UserRoutine } from "@/lib/types";
+
+const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
 const statItems = [
   { Icon: Dumbbell, val: "12", lbl: "Ejercicios", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/20" },
@@ -27,15 +30,15 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
-              {mockUser.display_name[0]}
+              {mockUser.display_name?.[0] ?? 'U'}
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold">{mockUser.full_name}</h1>
               <p className="text-muted-foreground text-sm">{mockUser.email}</p>
               <div className="flex gap-3 mt-2">
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">{mockUser.role}</span>
+                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">{mockUser.role?.name ?? 'free'}</span>
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-orange-500" />{mockUser.streak.current} días de racha
+                  <Flame className="w-3 h-3 text-orange-500" />{mockUser.streak.current_streak} días de racha
                 </span>
               </div>
             </div>
@@ -110,10 +113,10 @@ export default function ProfilePage() {
           {mockUserRoutines.map((ur) => (
             <div key={ur.id} className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <Image src={ur.routine.thumbnail_url} alt={ur.routine.title} fill sizes="48px" className="object-cover" />
+                <Image src={asView(ur)?.thumbnail_url ?? ''} alt={asView(ur)?.title ?? ''} fill sizes="48px" className="object-cover" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{ur.routine.title}</p>
+                <p className="font-medium text-sm truncate">{asView(ur)?.title}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-amber-400 rounded-full" style={{ width: `${ur.progress_percent}%` }} />
@@ -122,7 +125,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <Button size="sm" variant="outline" asChild className="shrink-0">
-                <Link href={`/routines/${ur.routine.id}`}>Ver</Link>
+                <Link href={`/routines/${asView(ur)?.id}`}>Ver</Link>
               </Button>
             </div>
           ))}
@@ -138,11 +141,11 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="grid grid-cols-3 gap-3">
-            {mockRewards.map((r) => (
-              <div key={r.id} className="bg-muted/50 rounded-xl p-3 text-center space-y-1">
-                <p className="text-3xl">{r.icon}</p>
-                <p className="font-semibold text-xs">{r.title}</p>
-                <p className="text-muted-foreground text-xs">{r.description}</p>
+            {mockUserRewards.map((ur) => (
+              <div key={ur.id} className="bg-muted/50 rounded-xl p-3 text-center space-y-1">
+                <p className="text-3xl">{getRewardIcon(ur.reward!)}</p>
+                <p className="font-semibold text-xs">{ur.reward?.title}</p>
+                <p className="text-muted-foreground text-xs">{ur.reward?.description}</p>
               </div>
             ))}
           </div>

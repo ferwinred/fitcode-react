@@ -79,7 +79,7 @@ export default function NewPlanPage() {
                     }`}
                   >
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                      <Image src={r.thumbnail_url} alt={r.title} fill sizes="48px" className="object-cover" />
+                      <Image src={r.thumbnail_url ?? ''} alt={r.title} fill sizes="48px" className="object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{r.title}</p>

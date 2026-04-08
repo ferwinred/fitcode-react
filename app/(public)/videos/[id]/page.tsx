@@ -12,7 +12,7 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
   const video = mockVideos.find((v) => v.id === Number(params.id)) ?? mockVideos[0];
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [likes, setLikes] = useState(video.likes);
+  const [likes, setLikes] = useState(video.likes ?? 0);
 
   const handleLike = () => {
     setLiked((l) => !l);
@@ -76,7 +76,7 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
                 <Share2 className="w-4 h-4 mr-1" /> Compartir
               </Button>
             </div>
-            <span className="text-sm text-muted-foreground">{formatDuration(video.duration_seconds)}</span>
+            <span className="text-sm text-muted-foreground">{formatDuration(video.duration_seconds ?? 0)}</span>
           </div>
 
           <div>
@@ -120,7 +120,7 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Duración</span>
-                  <span className="font-medium">{formatDuration(video.duration_seconds)}</span>
+                  <span className="font-medium">{formatDuration(video.duration_seconds ?? 0)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Acceso</span>

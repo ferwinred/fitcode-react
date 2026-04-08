@@ -17,7 +17,7 @@ export default function VideosPage() {
           <Link key={v.id} href={`/videos/${v.id}`}>
             <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group">
               <div className="relative h-48 bg-muted overflow-hidden">
-                <Image src={v.thumbnail_url} alt={v.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                <Image src={v.thumbnail_url ?? ''} alt={v.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
                     <Play className="w-6 h-6 text-gray-900 ml-0.5" />
@@ -25,7 +25,7 @@ export default function VideosPage() {
                 </div>
                 <div className="absolute top-2 left-2"><FreeBadge isFree={v.is_free} /></div>
                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
-                  {formatDuration(v.duration_seconds)}
+                  {formatDuration(v.duration_seconds ?? 0)}
                 </div>
               </div>
               <CardContent className="p-4 space-y-1">

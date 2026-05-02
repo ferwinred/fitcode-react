@@ -266,3 +266,21 @@ export interface FavoritesState {
   workoutIds: number[];
   videoIds: number[];
 }
+
+// ─── Preferencias ───────────────────────────────────────────────────────────
+
+export type ThemeMode = "light" | "dark";
+
+export interface UserPreferences {
+  theme: ThemeMode;
+  language?: string;
+  notificationsEnabled: boolean;
+}
+
+export interface ProgressState {
+  totalWorkoutsCompleted: number;
+  totalMinutesExercised: number;
+  lastWorkoutDate: string | null; // ISO date string
+  weeklyGoal: number; // workouts per week
+  weeklyProgress: number; // workouts this week
+}

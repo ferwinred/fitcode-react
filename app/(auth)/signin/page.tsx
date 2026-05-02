@@ -2,21 +2,81 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
+import { getStoredUser, setStoredUser } from "@/lib/storage";
+import type { UserView } from "@/lib/types";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { login, isAuthenticated } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // If already authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    router.push("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
+    setError("");
+
+    try {
+      // Simulate API call delay
+      await new Promise((r) => setTimeout(r, 800));
+
+      // Check if user exists in localStorage
+      const storedUser = getStoredUser();
+      
+      if (storedUser && storedUser.email === email) {
+        // User exists, log them in
+        login(storedUser);
+        router.push("/dashboard");
+      } else {
+        // Check if user is in our mock data (for demo purposes)
+        const mockUser: UserView = {
+          id: 1,
+          full_name: email.split("@")[0],
+          email: email,
+          display_name: email.split("@")[0],
+          role_id: 1,
+          date_of_birth: "1990-01-01",
+          sex: "other",
+          height_cm: null,
+          weight_kg: null,
+          metadata: null,
+          created_at: new Date().toISOString(),
+          updated_at: null,
+          deleted_at: null,
+          streak: {
+            current_streak: 0,
+            longest_streak: 0,
+          },
+          progress_percent: 0,
+        };
+        
+        // Save to localStorage and login
+        setStoredUser(mockUser);
+        login(mockUser);
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError("Error al iniciar sesión. Intenta de nuevo.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,12 +87,14 @@ export default function SignInPage() {
       </CardHeader>
       <CardContent className="p-6 space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
+<div className="space-y-1.5">
             <Label htmlFor="email" className="text-white/80">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="correo@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400"
             />
@@ -44,6 +106,8 @@ export default function SignInPage() {
                 id="password"
                 type={showPass ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400 pr-10"
               />
@@ -59,13 +123,16 @@ export default function SignInPage() {
           <div className="flex justify-end">
             <Link href="#" className="text-xs text-amber-400 hover:text-amber-300">¿Olvidaste tu contraseña?</Link>
           </div>
-          <Button
+<Button
             type="submit"
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl cursor-pointer"
             disabled={loading}
           >
             {loading ? "Cargando..." : "Iniciar sesión"}
           </Button>
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
         </form>
 
         <div className="relative">

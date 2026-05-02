@@ -1,9 +1,14 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Flame, Trophy, Dumbbell, TrendingUp, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DifficultyBadge } from "@/components/badges";
+import { useAuth } from "@/context/auth-context";
 import { mockUser, mockUserRoutines, mockUserRewards, mockWorkouts } from "@/lib/mock-data";
 import { getRewardIcon } from "@/lib/mock-data";
 import type { UserRoutine } from "@/lib/types";
@@ -12,14 +17,36 @@ import type { UserRoutine } from "@/lib/types";
 const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
+  // Use actual user if authenticated, otherwise fallback to mock for demo
+  const currentUser = isAuthenticated && user ? user : mockUser;
+  
   const recommended = mockWorkouts.slice(0, 3);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-48"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 bg-muted rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">¡Hola, {mockUser.display_name}! 👋</h1>
+          <h1 className="text-2xl font-bold">¡Hola, {currentUser.display_name || currentUser.full_name || 'Usuario'}! 👋</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Sigue así, vas muy bien esta semana.</p>
         </div>
         <Button asChild className="bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl hidden sm:flex">
@@ -30,8 +57,8 @@ export default function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: TrendingUp, label: "Progreso", value: `${mockUser.progress_percent}%`, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/20" },
-          { icon: Flame, label: "Racha actual", value: `${mockUser.streak.current_streak} días`, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20" },
+          { icon: TrendingUp, label: "Progreso", value: `${currentUser.progress_percent || 0}%`, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/20" },
+          { icon: Flame, label: "Racha actual", value: `${currentUser.streak?.current_streak || 0} días`, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20" },
           { icon: Dumbbell, label: "Ejercicios", value: "12 completados", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/20" },
           { icon: Trophy, label: "Recompensas", value: `${mockUserRewards.length} ganadas`, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
         ].map(({ icon: Icon, label, value, color, bg }) => (
@@ -98,9 +125,9 @@ export default function DashboardPage() {
           <Card className="gradient-hero text-white border-0">
             <CardContent className="p-5 text-center space-y-2">
               <Flame className="w-8 h-8 text-amber-400 mx-auto" />
-              <p className="text-3xl font-extrabold">{mockUser.streak.current_streak}</p>
+              <p className="text-3xl font-extrabold">{currentUser.streak?.current_streak || 0}</p>
               <p className="text-white/80 text-sm">días de racha</p>
-              <p className="text-white/50 text-xs">Récord: {mockUser.streak.longest_streak} días</p>
+              <p className="text-white/50 text-xs">Récord: {currentUser.streak?.longest_streak || 0} días</p>
             </CardContent>
           </Card>
 

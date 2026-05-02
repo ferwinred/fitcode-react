@@ -1,10 +1,18 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Trophy, Heart, Bell, CreditCard, Dumbbell, Flame, Settings, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Trophy, Heart, Bell, CreditCard, Dumbbell, Flame, Settings, ChevronRight, Save, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockUser, mockUserRoutines, mockUserRewards, getRewardIcon } from "@/lib/mock-data";
-import type { UserRoutine } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/auth-context";
+import { setStoredUser } from "@/lib/storage";
+import { mockUserRoutines, mockUserRewards, getRewardIcon } from "@/lib/mock-data";
+import type { UserRoutine, UserView } from "@/lib/types";
 
 const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
@@ -23,29 +31,123 @@ const quickLinks = [
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { user, isAuthenticated, login } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Edit form state
+  const [formData, setFormData] = useState({
+    full_name: user?.full_name || "",
+    email: user?.email || "",
+    display_name: user?.display_name || "",
+    date_of_birth: user?.date_of_birth || "",
+    sex: user?.sex || "other",
+    height_cm: user?.height_cm?.toString() || "",
+    weight_kg: user?.weight_kg?.toString() || "",
+  });
+
+  // Redirect if not authenticated
+  if (!isAuthenticated || !user) {
+    router.push("/signin");
+    return null;
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    try {
+      // Simulate API call
+      await new Promise((r) => setTimeout(r, 500));
+      
+      // Update user data
+      const updatedUser: UserView = {
+        ...user,
+        full_name: formData.full_name,
+        email: formData.email,
+        display_name: formData.display_name,
+        date_of_birth: formData.date_of_birth,
+        sex: formData.sex,
+        height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
+        weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Save to localStorage and update context
+      setStoredUser(updatedUser);
+      login(updatedUser);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const initials = user.display_name?.[0]?.toUpperCase() ?? user.full_name?.[0]?.toUpperCase() ?? "U";
+  const sexLabel = user.sex === "male" ? "Masculino" : user.sex === "female" ? "Femenino" : "Otro";
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
-              {mockUser.display_name?.[0] ?? 'U'}
-            </div>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold">{mockUser.full_name}</h1>
-              <p className="text-muted-foreground text-sm">{mockUser.email}</p>
-              <div className="flex gap-3 mt-2">
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">{mockUser.role?.name ?? 'free'}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-orange-500" />{mockUser.streak.current_streak} días de racha
-                </span>
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-5">
+                <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
+                  {initials}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Nombre completo</Label>
+                    <Input
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Nombre de usuario</Label>
+                    <Input
+                      value={formData.display_name}
+                      onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving} className="flex-1">
+                  <Save className="w-4 h-4 mr-1" />
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
+                </Button>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0">
-              <Settings className="w-4 h-4 mr-1" /> Editar
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
+                {initials}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-xl font-bold">{user.full_name}</h1>
+                <p className="text-muted-foreground text-sm">@{user.display_name}</p>
+                <p className="text-muted-foreground text-sm">{user.email}</p>
+                <div className="flex gap-3 mt-2">
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">free</span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-orange-500" />{user.streak?.current_streak || 0} días de racha
+                  </span>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => setIsEditing(true)}>
+                <Settings className="w-4 h-4 mr-1" /> Editar
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -58,19 +160,68 @@ export default function ProfilePage() {
             </p>
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3">
-            {[
-              ["Nombre", mockUser.full_name],
-              ["Email", mockUser.email],
-              ["Fecha de nacimiento", mockUser.date_of_birth],
-              ["Sexo", mockUser.sex === "male" ? "Masculino" : "Femenino"],
-              ["Altura", mockUser.height_cm ? `${mockUser.height_cm} cm` : "—"],
-              ["Peso", mockUser.weight_kg ? `${mockUser.weight_kg} kg` : "—"],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-medium">{value}</span>
-              </div>
-            ))}
+            {isEditing ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Fecha de nacimiento</Label>
+                    <Input
+                      type="date"
+                      value={formData.date_of_birth}
+                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Sexo</Label>
+                    <select
+                      value={formData.sex}
+                      onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="male">Masculino</option>
+                      <option value="female">Femenino</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Altura (cm)</Label>
+                    <Input
+                      type="number"
+                      value={formData.height_cm}
+                      onChange={(e) => setFormData({ ...formData, height_cm: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Peso (kg)</Label>
+                    <Input
+                      type="number"
+                      value={formData.weight_kg}
+                      onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              [
+                ["Nombre", user.full_name],
+                ["Usuario", user.display_name || "—"],
+                ["Email", user.email],
+                ["Fecha de nacimiento", user.date_of_birth || "—"],
+                ["Sexo", sexLabel],
+                ["Altura", user.height_cm ? `${user.height_cm} cm` : "—"],
+                ["Peso", user.weight_kg ? `${user.weight_kg} kg` : "—"],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-medium">{value}</span>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -78,15 +229,34 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <Card>
             <CardContent className="p-4 grid grid-cols-2 gap-3">
-              {statItems.map(({ Icon, val, lbl, color, bg }) => (
-                <div key={lbl} className={`${bg} rounded-xl p-3 flex items-center gap-2`}>
-                  <Icon className={`w-4 h-4 ${color}`} />
-                  <div>
-                    <p className="font-bold text-sm">{val}</p>
-                    <p className="text-xs text-muted-foreground">{lbl}</p>
-                  </div>
+              <div className={`bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 flex items-center gap-2`}>
+                <Dumbbell className={`w-4 h-4 text-blue-500`} />
+                <div>
+                  <p className="font-bold text-sm">{statItems[0].val}</p>
+                  <p className="text-xs text-muted-foreground">{statItems[0].lbl}</p>
                 </div>
-              ))}
+              </div>
+              <div className={`bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 flex items-center gap-2`}>
+                <Trophy className={`w-4 h-4 text-amber-500`} />
+                <div>
+                  <p className="font-bold text-sm">{statItems[1].val}</p>
+                  <p className="text-xs text-muted-foreground">{statItems[1].lbl}</p>
+                </div>
+              </div>
+              <div className={`bg-orange-50 dark:bg-orange-950/20 rounded-xl p-3 flex items-center gap-2`}>
+                <Flame className={`w-4 h-4 text-orange-500`} />
+                <div>
+                  <p className="font-bold text-sm">{user.streak?.current_streak || 0}</p>
+                  <p className="text-xs text-muted-foreground">Racha actual</p>
+                </div>
+              </div>
+              <div className={`bg-red-50 dark:bg-red-950/20 rounded-xl p-3 flex items-center gap-2`}>
+                <Heart className={`w-4 h-4 text-red-500`} />
+                <div>
+                  <p className="font-bold text-sm">{statItems[3].val}</p>
+                  <p className="text-xs text-muted-foreground">{statItems[3].lbl}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

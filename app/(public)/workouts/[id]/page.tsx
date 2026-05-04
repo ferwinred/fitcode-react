@@ -3,55 +3,59 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Play, Pause, RotateCcw, ChevronRight, Lock } from "lucide-react";
+import { use } from "react";
+import { ArrowLeft, Play, Pause, RotateCcw, Lock, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge, FreeBadge } from "@/components/badges";
-import { mockWorkouts } from "@/lib/mock-data";
+import { workoutService } from "@/src/services";
+import { useFavorites } from "@/context/favorites-context";
+import type { WorkoutView } from "@/lib/types";
 
-export default function WorkoutDetailPage({ params }: { params: { id: string } }) {
-  const workout = mockWorkouts.find((w) => w.id === Number(params.id)) ?? mockWorkouts[0];
+export default function WorkoutDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { isWorkoutFavorite, toggleWorkout } = useFavorites();
+  const [workout, setWorkout] = useState<WorkoutView | null>(null);
+
+  useEffect(() => {
+    workoutService.getById(Number(id)).then(setWorkout);
+  }, [id]);
 
   const [currentSet, setCurrentSet] = useState(1);
-  const [phase, setPhase] = useState<"work" | "rest" | "done">("work");
-  const restSeconds = workout.rest_seconds ?? 60;
-  const sets = workout.sets ?? 3;
-  const [timeLeft, setTimeLeft] = useState(restSeconds);
-  const [running, setRunning] = useState(false);
+  const [phase, setPhase]           = useState<"work" | "rest" | "done">("work");
+  const [running, setRunning]       = useState(false);
+  const restSeconds = workout?.rest_seconds ?? 60;
+  const sets        = workout?.sets ?? 3;
+  const [timeLeft, setTimeLeft]     = useState(restSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset timer when workout loads
+  useEffect(() => { setTimeLeft(restSeconds); }, [restSeconds]);
 
   useEffect(() => {
     if (running && timeLeft > 0) {
-      intervalRef.current = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+      intervalRef.current = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     } else if (timeLeft === 0 && running) {
       setRunning(false);
       if (phase === "work") {
-        setPhase("rest");
-        setTimeLeft(restSeconds);
+        setPhase("rest"); setTimeLeft(restSeconds);
       } else if (phase === "rest") {
-        if (currentSet < sets) {
-          setCurrentSet((s) => s + 1);
-          setPhase("work");
-          setTimeLeft(restSeconds);
-        } else {
-          setPhase("done");
-        }
+        if (currentSet < sets) { setCurrentSet((s) => s + 1); setPhase("work"); setTimeLeft(restSeconds); }
+        else setPhase("done");
       }
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running, timeLeft, phase, currentSet, workout]);
+  }, [running, timeLeft, phase, currentSet, restSeconds, sets]);
 
   const reset = () => {
-    setRunning(false);
-    setCurrentSet(1);
-    setPhase("work");
-    setTimeLeft(restSeconds);
+    setRunning(false); setCurrentSet(1); setPhase("work"); setTimeLeft(restSeconds);
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
+  if (!workout) return <div className="flex items-center justify-center h-64 text-muted-foreground">Cargando...</div>;
+
   const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const ss = String(timeLeft % 60).padStart(2, "0");
-
   const phaseColor = phase === "work" ? "text-amber-400" : phase === "rest" ? "text-blue-400" : "text-emerald-400";
   const phaseLabel = phase === "work" ? "Trabajando" : phase === "rest" ? "Descansando" : "¡Completado!";
 
@@ -65,11 +69,17 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
         {/* Left: info */}
         <div className="space-y-5">
           <div className="relative h-56 rounded-2xl overflow-hidden bg-muted">
-            <Image src={workout.thumbnail_url ?? ''} alt={workout.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+            <Image src={workout.thumbnail_url ?? ""} alt={workout.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
               <FreeBadge isFree={workout.is_free ?? false} />
               <DifficultyBadge difficulty={workout.difficulty} />
             </div>
+            <button
+              onClick={() => toggleWorkout(workout.id)}
+              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 flex items-center justify-center shadow hover:scale-110 transition-transform"
+            >
+              <Heart className={`w-4 h-4 ${isWorkoutFavorite(workout.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+            </button>
           </div>
 
           <div>
@@ -79,12 +89,12 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
 
           <div className="grid grid-cols-2 gap-3">
             {[
-              ["💪", "Músculo", workout.main_muscle_group],
-              ["🏋️", "Equipo", workout.equipment],
-              ["🔁", "Series", `${sets} series`],
-              ["📊", "Reps", workout.reps ?? "—"],
+              ["💪", "Músculo",  workout.main_muscle_group],
+              ["🏋️", "Equipo",   workout.equipment],
+              ["🔁", "Series",   `${sets} series`],
+              ["📊", "Reps",     workout.reps ?? "—"],
             ].map(([icon, label, value]) => (
-              <div key={label} className="bg-muted/50 rounded-xl p-3">
+              <div key={String(label)} className="bg-muted/50 rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">{icon} {label}</p>
                 <p className="font-semibold text-sm mt-0.5">{value}</p>
               </div>
@@ -109,20 +119,14 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
 
         {/* Right: timer */}
         <div className="space-y-5">
-          <Card className="border-border">
+          <Card>
             <CardContent className="p-6 text-center space-y-4">
-              <p className="text-sm font-medium text-muted-foreground">
-                Serie {currentSet} de {sets}
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Serie {currentSet} de {sets}</p>
               <p className={`text-sm font-semibold ${phaseColor}`}>{phaseLabel}</p>
-
-              {/* Circular timer */}
               <div className="relative w-36 h-36 mx-auto">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
-                  <circle
-                    cx="50" cy="50" r="44" fill="none"
-                    stroke="currentColor" strokeWidth="6"
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="6"
                     strokeDasharray={`${2 * Math.PI * 44}`}
                     strokeDashoffset={`${2 * Math.PI * 44 * (1 - timeLeft / restSeconds)}`}
                     strokeLinecap="round"
@@ -134,26 +138,15 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
                   <span className="text-3xl font-bold tabular-nums">{mm}:{ss}</span>
                 </div>
               </div>
-
               <div className="flex justify-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={reset}
-                  className="rounded-full w-10 h-10"
-                >
+                <Button variant="outline" size="icon" onClick={reset} className="rounded-full w-10 h-10">
                   <RotateCcw className="w-4 h-4" />
                 </Button>
-                <Button
-                  size="lg"
-                  onClick={() => setRunning((r) => !r)}
-                  disabled={phase === "done"}
-                  className="rounded-full px-8 bg-amber-500 hover:bg-amber-400 text-white font-bold"
-                >
+                <Button size="lg" onClick={() => setRunning((r) => !r)} disabled={phase === "done"}
+                  className="rounded-full px-8 bg-amber-500 hover:bg-amber-400 text-white font-bold">
                   {running ? <><Pause className="w-4 h-4 mr-1" />Pausar</> : <><Play className="w-4 h-4 mr-1" />Iniciar</>}
                 </Button>
               </div>
-
               {phase === "done" && (
                 <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3">
                   <p className="text-emerald-600 font-semibold text-sm">🎉 ¡Ejercicio completado!</p>
@@ -161,22 +154,13 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
               )}
             </CardContent>
           </Card>
-
-          {/* Sets progress */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Progreso de series</p>
             <div className="flex gap-2">
               {Array.from({ length: sets }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 h-2 rounded-full transition-colors ${
-                    i < currentSet - 1
-                      ? "bg-emerald-400"
-                      : i === currentSet - 1
-                      ? "bg-amber-400"
-                      : "bg-muted"
-                  }`}
-                />
+                <div key={i} className={`flex-1 h-2 rounded-full transition-colors ${
+                  i < currentSet - 1 ? "bg-emerald-400" : i === currentSet - 1 ? "bg-amber-400" : "bg-muted"
+                }`} />
               ))}
             </div>
           </div>

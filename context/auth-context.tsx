@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
 import type { UserView, AuthState } from "@/lib/types";
-import { getStoredUser, setStoredUser, clearStoredUser } from "@/lib/storage";
-import { mockUser } from "@/lib/mock-data";
+import { authService } from "@/src/services";
+import type { LoginCredentials } from "@/src/core/interfaces/IDataProvider";
 
 // ─── State & Actions ─────────────────────────────────────────────────────────
 
@@ -28,8 +28,8 @@ const initialState: AuthState = { user: null, isAuthenticated: false, isLoading:
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 interface AuthContextValue extends AuthState {
-  login: (user: UserView) => void;
-  logout: () => void;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,21 +39,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Hydrate from storage on mount
   useEffect(() => {
-    const stored = getStoredUser();
-    // TODO: cuando el backend esté listo, validar el token aquí antes de hacer dispatch
-    // Ejemplo: const user = await validateToken(stored?.token)
-    dispatch({ type: "INIT", payload: stored });
+    authService.getCurrentUser().then((user) => {
+      dispatch({ type: "INIT", payload: user });
+    });
   }, []);
 
-  const login = useCallback((user: UserView) => {
-    setStoredUser(user);
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const user = await authService.login(credentials);
     dispatch({ type: "LOGIN", payload: user });
   }, []);
 
-  const logout = useCallback(() => {
-    clearStoredUser();
+  const logout = useCallback(async () => {
+    await authService.logout();
     dispatch({ type: "LOGOUT" });
   }, []);
 
@@ -72,5 +70,4 @@ export function useAuth(): AuthContextValue {
   return ctx;
 }
 
-// ─── Dev helper — simula login con el mock user ───────────────────────────────
-export { mockUser as MOCK_USER };
+

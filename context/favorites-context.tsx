@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
 import type { FavoritesState } from "@/lib/types";
-import { getStoredFavorites, setStoredFavorites } from "@/lib/storage";
+import { favoritesService } from "@/src/services";
 
 // ─── State & Actions ─────────────────────────────────────────────────────────
 
@@ -51,16 +51,16 @@ const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, dispatch] = useReducer(favoritesReducer, initialState);
 
-  // Hydrate from storage on mount
+  // Hydrate from provider on mount
   useEffect(() => {
-    dispatch({ type: "INIT", payload: getStoredFavorites() });
+    favoritesService.get().then((data) => {
+      dispatch({ type: "INIT", payload: data });
+    });
   }, []);
 
   // Persist every change
   useEffect(() => {
-    setStoredFavorites(favorites);
-    // TODO: cuando el backend esté listo, sincronizar aquí
-    // Ejemplo: fetch("/api/favorites", { method: "PUT", body: JSON.stringify(favorites) })
+    favoritesService.save(favorites);
   }, [favorites]);
 
   const toggleWorkout = useCallback((id: number) => {

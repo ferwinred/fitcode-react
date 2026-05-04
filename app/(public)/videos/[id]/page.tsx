@@ -1,18 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { use } from "react";
 import { ArrowLeft, Heart, Bookmark, Share2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge, FreeBadge } from "@/components/badges";
-import { mockVideos, formatDuration } from "@/lib/mock-data";
+import { videoService } from "@/src/services";
+import { useFavorites } from "@/context/favorites-context";
+import { formatDuration } from "@/lib/mock-data";
+import type { WorkoutVideoView } from "@/lib/types";
 
-export default function VideoDetailPage({ params }: { params: { id: string } }) {
-  const video = mockVideos.find((v) => v.id === Number(params.id)) ?? mockVideos[0];
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [likes, setLikes] = useState(video.likes ?? 0);
+export default function VideoDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { isVideoFavorite, toggleVideo } = useFavorites();
+
+  const [video,  setVideo]  = useState<WorkoutVideoView | null>(null);
+  const [liked,  setLiked]  = useState(false);
+  const [saved,  setSaved]  = useState(false);
+  const [likes,  setLikes]  = useState(0);
+
+  useEffect(() => {
+    videoService.getById(Number(id)).then((v) => {
+      if (v) { setVideo(v); setLikes(v.likes ?? 0); }
+    });
+  }, [id]);
+
+  if (!video) return <div className="flex items-center justify-center h-64 text-muted-foreground">Cargando...</div>;
 
   const handleLike = () => {
     setLiked((l) => !l);
@@ -30,13 +45,9 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
         <div className="md:col-span-2 space-y-4">
           {video.is_free ? (
             <div className="relative aspect-video rounded-2xl overflow-hidden bg-black">
-              <iframe
-                src={video.url}
-                title={video.title}
+              <iframe src={video.url} title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
+                allowFullScreen className="w-full h-full" />
             </div>
           ) : (
             <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 flex items-center justify-center">
@@ -54,23 +65,16 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
           {/* Actions */}
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLike}
-                className={liked ? "border-red-300 text-red-500 bg-red-50 dark:bg-red-950/20" : ""}
-              >
+              <Button variant="outline" size="sm" onClick={handleLike}
+                className={liked ? "border-red-300 text-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
                 <Heart className={`w-4 h-4 mr-1 ${liked ? "fill-red-500 text-red-500" : ""}`} />
                 {likes}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSaved((s) => !s)}
-                className={saved ? "border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950/20" : ""}
-              >
-                <Bookmark className={`w-4 h-4 mr-1 ${saved ? "fill-amber-500 text-amber-500" : ""}`} />
-                {saved ? "Guardado" : "Guardar"}
+              <Button variant="outline" size="sm"
+                onClick={() => toggleVideo(video.id)}
+                className={isVideoFavorite(video.id) ? "border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950/20" : ""}>
+                <Bookmark className={`w-4 h-4 mr-1 ${isVideoFavorite(video.id) ? "fill-amber-500 text-amber-500" : ""}`} />
+                {isVideoFavorite(video.id) ? "Guardado" : "Guardar"}
               </Button>
               <Button variant="outline" size="sm">
                 <Share2 className="w-4 h-4 mr-1" /> Compartir
@@ -84,7 +88,6 @@ export default function VideoDetailPage({ params }: { params: { id: string } }) 
             <p className="text-muted-foreground text-sm mt-1 capitalize">{video.video_type}</p>
           </div>
 
-          {/* Comments placeholder */}
           <Card>
             <CardContent className="p-4 space-y-3">
               <p className="font-semibold text-sm">Comentarios</p>

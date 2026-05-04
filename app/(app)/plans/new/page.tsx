@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Sparkles, ClipboardList, Plus, Check } from "lucide-react";
@@ -8,14 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { mockRoutines } from "@/lib/mock-data";
+import { routineService } from "@/src/services";
+import type { RoutineView } from "@/lib/types";
 
 type Mode = "manual" | "ai";
 
 export default function NewPlanPage() {
-  const [mode, setMode] = useState<Mode>("manual");
+  const [mode, setMode]         = useState<Mode>("manual");
   const [selected, setSelected] = useState<number[]>([]);
   const [planName, setPlanName] = useState("");
+  const [routines, setRoutines] = useState<RoutineView[]>([]);
+
+  useEffect(() => {
+    routineService.getAll().then(setRoutines);
+  }, []);
 
   const toggleRoutine = (id: number) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -34,16 +40,14 @@ export default function NewPlanPage() {
       {/* Mode selector */}
       <div className="grid grid-cols-2 gap-3">
         {([
-          { id: "manual", icon: ClipboardList, label: "Manual", desc: "Selecciona rutinas y ejercicios tú mismo" },
-          { id: "ai", icon: Sparkles, label: "Generado por IA", desc: "Dinos tus objetivos y la IA crea tu plan" },
+          { id: "manual", icon: ClipboardList, label: "Manual",          desc: "Selecciona rutinas y ejercicios tú mismo" },
+          { id: "ai",     icon: Sparkles,      label: "Generado por IA", desc: "Dinos tus objetivos y la IA crea tu plan" },
         ] as const).map(({ id, icon: Icon, label, desc }) => (
           <button
             key={id}
             onClick={() => setMode(id)}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
-              mode === id
-                ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20"
-                : "border-border hover:border-amber-200"
+              mode === id ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20" : "border-border hover:border-amber-200"
             }`}
           >
             <Icon className={`w-5 h-5 mb-2 ${mode === id ? "text-amber-500" : "text-muted-foreground"}`} />
@@ -68,7 +72,7 @@ export default function NewPlanPage() {
           <div>
             <p className="font-semibold text-sm mb-3">Selecciona rutinas</p>
             <div className="space-y-2">
-              {mockRoutines.map((r) => {
+              {routines.map((r) => {
                 const isSelected = selected.includes(r.id);
                 return (
                   <button
@@ -79,7 +83,7 @@ export default function NewPlanPage() {
                     }`}
                   >
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                      <Image src={r.thumbnail_url ?? ''} alt={r.title} fill sizes="48px" className="object-cover" />
+                      <Image src={r.thumbnail_url ?? ""} alt={r.title} fill sizes="48px" className="object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{r.title}</p>
@@ -114,12 +118,12 @@ export default function NewPlanPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
-                { id: "goal", label: "Objetivo", placeholder: "Ej: Perder peso, ganar músculo" },
-                { id: "level", label: "Nivel", placeholder: "Principiante / Intermedio / Avanzado" },
-                { id: "weight", label: "Peso (kg)", placeholder: "75" },
-                { id: "height", label: "Altura (cm)", placeholder: "178" },
-                { id: "days", label: "Días por semana", placeholder: "3" },
-                { id: "prefs", label: "Preferencias", placeholder: "Sin equipo, en casa..." },
+                { id: "goal",   label: "Objetivo",        placeholder: "Ej: Perder peso, ganar músculo" },
+                { id: "level",  label: "Nivel",           placeholder: "Principiante / Intermedio / Avanzado" },
+                { id: "weight", label: "Peso (kg)",       placeholder: "75" },
+                { id: "height", label: "Altura (cm)",     placeholder: "178" },
+                { id: "days",   label: "Días por semana", placeholder: "3" },
+                { id: "prefs",  label: "Preferencias",    placeholder: "Sin equipo, en casa..." },
               ].map(({ id, label, placeholder }) => (
                 <div key={id} className="space-y-1.5">
                   <Label htmlFor={id}>{label}</Label>

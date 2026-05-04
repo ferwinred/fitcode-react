@@ -1,28 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Trophy, Heart, Bell, CreditCard, Dumbbell, Flame, Settings, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockUser, mockUserRoutines, mockUserRewards, getRewardIcon } from "@/lib/mock-data";
-import type { UserRoutine } from "@/lib/types";
+import { useAuth } from "@/context/auth-context";
+import { useFavorites } from "@/context/favorites-context";
+import { userRoutineService, rewardService, streakService } from "@/src/services";
+import { getRewardIcon } from "@/lib/mock-data";
+import type { UserRoutine, UserReward, Streak } from "@/lib/types";
 
 const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
-const statItems = [
-  { Icon: Dumbbell, val: "12", lbl: "Ejercicios", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/20" },
-  { Icon: Trophy, val: "3", lbl: "Recompensas", color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/20" },
-  { Icon: Flame, val: "7", lbl: "Racha actual", color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20" },
-  { Icon: Heart, val: "8", lbl: "Favoritos", color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/20" },
-];
-
 const quickLinks = [
-  { href: "/favorites", Icon: Heart, label: "Mis favoritos" },
-  { href: "/plans", Icon: Dumbbell, label: "Mis planes" },
-  { href: "/pricing", Icon: CreditCard, label: "Suscripción" },
-  { href: "#", Icon: Bell, label: "Notificaciones" },
+  { href: "/favorites", Icon: Heart,       label: "Mis favoritos" },
+  { href: "/plans",     Icon: Dumbbell,    label: "Mis planes" },
+  { href: "/pricing",   Icon: CreditCard,  label: "Suscripción" },
+  { href: "#",          Icon: Bell,        label: "Notificaciones" },
 ];
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+  const { favorites } = useFavorites();
+
+  const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
+  const [rewards, setRewards]           = useState<UserReward[]>([]);
+  const [streak, setStreak]             = useState<Streak | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    userRoutineService.getByUser(user.id).then(setUserRoutines);
+    rewardService.getByUser(user.id).then(setRewards);
+    streakService.getByUser(user.id).then(setStreak);
+  }, [user]);
+
+  const activeRoutines = userRoutines.filter((ur) => ur.status === "active");
+  const favCount = favorites.workoutIds.length + favorites.videoIds.length;
+
+  const statItems = [
+    { Icon: Dumbbell, val: String(activeRoutines.length), lbl: "Rutinas activas", color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/20" },
+    { Icon: Trophy,   val: String(rewards.length),        lbl: "Recompensas",     color: "text-amber-500",  bg: "bg-amber-50 dark:bg-amber-950/20" },
+    { Icon: Flame,    val: String(streak?.current_streak ?? 0), lbl: "Racha actual", color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20" },
+    { Icon: Heart,    val: String(favCount),              lbl: "Favoritos",       color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/20" },
+  ];
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
@@ -30,15 +53,17 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-full bg-amber-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
-              {mockUser.display_name?.[0] ?? 'U'}
+              {user?.display_name?.[0] ?? "U"}
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold">{mockUser.full_name}</h1>
-              <p className="text-muted-foreground text-sm">{mockUser.email}</p>
+              <h1 className="text-xl font-bold">{user?.full_name}</h1>
+              <p className="text-muted-foreground text-sm">{user?.email}</p>
               <div className="flex gap-3 mt-2">
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">{mockUser.role?.name ?? 'free'}</span>
+                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium capitalize">
+                  {user?.role?.name ?? "free"}
+                </span>
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-orange-500" />{mockUser.streak.current_streak} días de racha
+                  <Flame className="w-3 h-3 text-orange-500" />{streak?.current_streak ?? 0} días de racha
                 </span>
               </div>
             </div>
@@ -59,16 +84,16 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3">
             {[
-              ["Nombre", mockUser.full_name],
-              ["Email", mockUser.email],
-              ["Fecha de nacimiento", mockUser.date_of_birth],
-              ["Sexo", mockUser.sex === "male" ? "Masculino" : "Femenino"],
-              ["Altura", mockUser.height_cm ? `${mockUser.height_cm} cm` : "—"],
-              ["Peso", mockUser.weight_kg ? `${mockUser.weight_kg} kg` : "—"],
+              ["Nombre",              user?.full_name],
+              ["Email",               user?.email],
+              ["Fecha de nacimiento", user?.date_of_birth],
+              ["Sexo",                user?.sex === "male" ? "Masculino" : "Femenino"],
+              ["Altura",              user?.height_cm ? `${user.height_cm} cm` : "—"],
+              ["Peso",                user?.weight_kg ? `${user.weight_kg} kg` : "—"],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{label}</span>
-                <span className="font-medium">{value}</span>
+                <span className="font-medium">{value ?? "—"}</span>
               </div>
             ))}
           </CardContent>
@@ -110,10 +135,11 @@ export default function ProfilePage() {
           <p className="font-bold text-sm">Rutinas activas</p>
         </CardHeader>
         <CardContent className="p-4 pt-0 space-y-3">
-          {mockUserRoutines.map((ur) => (
+          {activeRoutines.length === 0 && <p className="text-sm text-muted-foreground">No tienes rutinas activas.</p>}
+          {activeRoutines.map((ur) => (
             <div key={ur.id} className="flex items-center gap-3">
               <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <Image src={asView(ur)?.thumbnail_url ?? ''} alt={asView(ur)?.title ?? ''} fill sizes="48px" className="object-cover" />
+                <Image src={asView(ur)?.thumbnail_url ?? ""} alt={asView(ur)?.title ?? ""} fill sizes="48px" className="object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{asView(ur)?.title}</p>
@@ -140,8 +166,9 @@ export default function ProfilePage() {
           </p>
         </CardHeader>
         <CardContent className="p-4 pt-0">
+          {rewards.length === 0 && <p className="text-sm text-muted-foreground">Aún no tienes recompensas.</p>}
           <div className="grid grid-cols-3 gap-3">
-            {mockUserRewards.map((ur) => (
+            {rewards.map((ur) => (
               <div key={ur.id} className="bg-muted/50 rounded-xl p-3 text-center space-y-1">
                 <p className="text-3xl">{getRewardIcon(ur.reward!)}</p>
                 <p className="font-semibold text-xs">{ur.reward?.title}</p>

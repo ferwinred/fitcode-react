@@ -2,21 +2,36 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
 
 export default function SignInPage() {
+  const { login } = useAuth();
+  const router = useRouter();
+
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
+    try {
+      await login({ email, password });
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,6 +49,8 @@ export default function SignInPage() {
               type="email"
               placeholder="correo@ejemplo.com"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400"
             />
           </div>
@@ -45,6 +62,8 @@ export default function SignInPage() {
                 type={showPass ? "text" : "password"}
                 placeholder="••••••••"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400 pr-10"
               />
               <button
@@ -56,8 +75,15 @@ export default function SignInPage() {
               </button>
             </div>
           </div>
+
+          {error && (
+            <p className="text-sm text-red-400 text-center">{error}</p>
+          )}
+
           <div className="flex justify-end">
-            <Link href="#" className="text-xs text-amber-400 hover:text-amber-300">¿Olvidaste tu contraseña?</Link>
+            <Link href="#" className="text-xs text-amber-400 hover:text-amber-300">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
           <Button
             type="submit"
@@ -68,12 +94,41 @@ export default function SignInPage() {
           </Button>
         </form>
 
+        {/* Hint de credenciales en desarrollo */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="rounded-lg bg-white/5 border border-white/10 p-3 space-y-1">
+            <p className="text-xs text-white/40 font-medium">Credenciales de prueba</p>
+            {[
+              { email: "carlos@fitcode.app", password: "carlos123", role: "Premium" },
+              { email: "ana@fitcode.app",    password: "ana123",    role: "Free" },
+              { email: "admin@fitcode.app",  password: "admin123",  role: "Admin" },
+            ].map((c) => (
+              <button
+                key={c.email}
+                type="button"
+                onClick={() => { setEmail(c.email); setPassword(c.password); }}
+                className="w-full text-left text-xs text-white/50 hover:text-white/80 transition-colors"
+              >
+                {c.email} / {c.password}
+                <span className="ml-1 text-amber-400/60">({c.role})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="relative">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/20" /></div>
-          <div className="relative text-center text-xs text-white/40 bg-transparent px-2">o continúa con</div>
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/20" />
+          </div>
+          <div className="relative text-center text-xs text-white/40 bg-transparent px-2">
+            o continúa con
+          </div>
         </div>
 
-        <Button variant="outline" className="w-full border-white/20 text-black cursor-pointer hover:text-white hover:bg-white/10 rounded-xl">
+        <Button
+          variant="outline"
+          className="w-full border-white/20 text-black cursor-pointer hover:text-white hover:bg-white/10 rounded-xl"
+        >
           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -85,7 +140,9 @@ export default function SignInPage() {
 
         <p className="text-center text-sm text-white/60">
           ¿No tienes cuenta?{" "}
-          <Link href="/signup" className="text-amber-400 hover:text-amber-300 font-medium">Regístrate</Link>
+          <Link href="/signup" className="text-amber-400 hover:text-amber-300 font-medium">
+            Regístrate
+          </Link>
         </p>
       </CardContent>
     </Card>

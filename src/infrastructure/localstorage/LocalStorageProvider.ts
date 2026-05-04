@@ -1,0 +1,169 @@
+import type { IDataProvider, LoginCredentials } from "@/src/core/interfaces/IDataProvider";
+import type {
+  UserView,
+  FavoritesState,
+  WorkoutView,
+  RoutineView,
+  WorkoutVideoView,
+  UserRoutine,
+  UserRoutineSession,
+  UserWorkoutProgress,
+  Streak,
+  UserReward,
+} from "@/lib/types";
+import { mockWorkouts, mockRoutines, mockVideos } from "@/lib/mock-data";
+import { runSeedIfNeeded, LS_KEYS } from "./LocalStorageSeeder";
+import type { SeedCredential } from "./seed-data";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function lsRead<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function lsWrite<T>(key: string, value: T): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function lsRemove(key: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(key);
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export class LocalStorageProvider implements IDataProvider {
+
+  private ensureSeeded(): void {
+    runSeedIfNeeded();
+  }
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+
+  async login(credentials: LoginCredentials): Promise<UserView> {
+    this.ensureSeeded();
+
+    const creds = lsRead<SeedCredential[]>(LS_KEYS.CREDENTIALS) ?? [];
+    const match = creds.find(
+      (c) => c.email === credentials.email && c.password === credentials.password
+    );
+    if (!match) throw new Error("Credenciales inválidas");
+
+    const users = lsRead<UserView[]>(LS_KEYS.USERS) ?? [];
+    const user = users.find((u) => u.id === match.user_id);
+    if (!user) throw new Error("Usuario no encontrado");
+
+    lsWrite(LS_KEYS.CURRENT_USER, user);
+    return user;
+  }
+
+  async logout(): Promise<void> {
+    lsRemove(LS_KEYS.CURRENT_USER);
+  }
+
+  async getCurrentUser(): Promise<UserView | null> {
+    this.ensureSeeded();
+    return lsRead<UserView>(LS_KEYS.CURRENT_USER);
+  }
+
+  // ── Workouts ────────────────────────────────────────────────────────────────
+
+  async getWorkouts(params?: { free?: boolean; limit?: number }): Promise<WorkoutView[]> {
+    let result = [...mockWorkouts];
+    if (params?.free !== undefined) result = result.filter((w) => w.is_free === params.free);
+    if (params?.limit !== undefined) result = result.slice(0, params.limit);
+    return result;
+  }
+
+  async getWorkoutById(id: number): Promise<WorkoutView | null> {
+    return mockWorkouts.find((w) => w.id === id) ?? null;
+  }
+
+  // ── Routines ────────────────────────────────────────────────────────────────
+
+  async getRoutines(params?: { free?: boolean; limit?: number }): Promise<RoutineView[]> {
+    let result = [...mockRoutines];
+    if (params?.free !== undefined) result = result.filter((r) => r.is_free === params.free);
+    if (params?.limit !== undefined) result = result.slice(0, params.limit);
+    return result;
+  }
+
+  async getRoutineById(id: number): Promise<RoutineView | null> {
+    return mockRoutines.find((r) => r.id === id) ?? null;
+  }
+
+  // ── Videos ──────────────────────────────────────────────────────────────────
+
+  async getVideos(params?: { free?: boolean; limit?: number }): Promise<WorkoutVideoView[]> {
+    let result = [...mockVideos];
+    if (params?.free !== undefined) result = result.filter((v) => v.is_free === params.free);
+    if (params?.limit !== undefined) result = result.slice(0, params.limit);
+    return result;
+  }
+
+  async getVideoById(id: number): Promise<WorkoutVideoView | null> {
+    return mockVideos.find((v) => v.id === id) ?? null;
+  }
+
+  // ── Favorites ───────────────────────────────────────────────────────────────
+
+  async getFavorites(): Promise<FavoritesState> {
+    this.ensureSeeded();
+    const user = lsRead<UserView>(LS_KEYS.CURRENT_USER);
+    const key = user ? `${LS_KEYS.FAVORITES}:${user.id}` : LS_KEYS.FAVORITES;
+    return lsRead<FavoritesState>(key) ?? { workoutIds: [], videoIds: [] };
+  }
+
+  async saveFavorites(favorites: FavoritesState): Promise<void> {
+    const user = lsRead<UserView>(LS_KEYS.CURRENT_USER);
+    const key = user ? `${LS_KEYS.FAVORITES}:${user.id}` : LS_KEYS.FAVORITES;
+    lsWrite(key, favorites);
+  }
+
+  // ── User Routines ────────────────────────────────────────────────────────────
+
+  async getUserRoutines(userId: number): Promise<UserRoutine[]> {
+    this.ensureSeeded();
+    const all = lsRead<UserRoutine[]>(LS_KEYS.USER_ROUTINES) ?? [];
+    return all.filter((ur) => ur.user_id === userId);
+  }
+
+  // ── Sessions ─────────────────────────────────────────────────────────────────
+
+  async getSessions(userRoutineId: number): Promise<UserRoutineSession[]> {
+    this.ensureSeeded();
+    const all = lsRead<UserRoutineSession[]>(LS_KEYS.SESSIONS) ?? [];
+    return all.filter((s) => s.user_routine_id === userRoutineId);
+  }
+
+  // ── Progress ──────────────────────────────────────────────────────────────────
+
+  async getProgress(sessionId: number): Promise<UserWorkoutProgress[]> {
+    this.ensureSeeded();
+    const all = lsRead<UserWorkoutProgress[]>(LS_KEYS.PROGRESS) ?? [];
+    return all.filter((p) => p.session_id === sessionId);
+  }
+
+  // ── Streaks ───────────────────────────────────────────────────────────────────
+
+  async getStreak(userId: number): Promise<Streak | null> {
+    this.ensureSeeded();
+    const all = lsRead<Streak[]>(LS_KEYS.STREAKS) ?? [];
+    return all.find((s) => s.user_id === userId && s.name === "default_streak") ?? null;
+  }
+
+  // ── Rewards ───────────────────────────────────────────────────────────────────
+
+  async getUserRewards(userId: number): Promise<UserReward[]> {
+    this.ensureSeeded();
+    const all = lsRead<UserReward[]>(LS_KEYS.USER_REWARDS) ?? [];
+    return all.filter((r) => r.user_id === userId);
+  }
+}

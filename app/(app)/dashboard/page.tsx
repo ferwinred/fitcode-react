@@ -1,25 +1,46 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Flame, Trophy, Dumbbell, TrendingUp, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DifficultyBadge } from "@/components/badges";
-import { mockUser, mockUserRoutines, mockUserRewards, mockWorkouts } from "@/lib/mock-data";
+import { useAuth } from "@/context/auth-context";
+import { workoutService, userRoutineService, rewardService, streakService } from "@/src/services";
 import { getRewardIcon } from "@/lib/mock-data";
-import type { UserRoutine } from "@/lib/types";
+import type { WorkoutView, UserRoutine, UserReward, Streak } from "@/lib/types";
 
-// Cast to access RoutineView fields populated via join
 const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
 export default function DashboardPage() {
-  const recommended = mockWorkouts.slice(0, 3);
+  const { user } = useAuth();
+
+  const [recommended, setRecommended] = useState<WorkoutView[]>([]);
+  const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
+  const [rewards, setRewards]           = useState<UserReward[]>([]);
+  const [streak, setStreak]             = useState<Streak | null>(null);
+
+  useEffect(() => {
+    workoutService.getAll({ limit: 3 }).then(setRecommended);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    userRoutineService.getByUser(user.id).then(setUserRoutines);
+    rewardService.getByUser(user.id).then(setRewards);
+    streakService.getByUser(user.id).then(setStreak);
+  }, [user]);
+
+  const activeRoutines = userRoutines.filter((ur) => ur.status === "active");
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">¡Hola, {mockUser.display_name}! 👋</h1>
+          <h1 className="text-2xl font-bold">¡Hola, {user?.display_name ?? "Usuario"}! 👋</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Sigue así, vas muy bien esta semana.</p>
         </div>
         <Button asChild className="bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl hidden sm:flex">
@@ -30,10 +51,10 @@ export default function DashboardPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: TrendingUp, label: "Progreso", value: `${mockUser.progress_percent}%`, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/20" },
-          { icon: Flame, label: "Racha actual", value: `${mockUser.streak.current_streak} días`, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20" },
-          { icon: Dumbbell, label: "Ejercicios", value: "12 completados", color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/20" },
-          { icon: Trophy, label: "Recompensas", value: `${mockUserRewards.length} ganadas`, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
+          { icon: TrendingUp, label: "Progreso",      value: `${user?.progress_percent ?? 0}%`,          color: "text-amber-500",   bg: "bg-amber-50 dark:bg-amber-950/20" },
+          { icon: Flame,      label: "Racha actual",  value: `${streak?.current_streak ?? 0} días`,       color: "text-orange-500",  bg: "bg-orange-50 dark:bg-orange-950/20" },
+          { icon: Dumbbell,   label: "Rutinas activas", value: `${activeRoutines.length} activas`,        color: "text-blue-500",    bg: "bg-blue-50 dark:bg-blue-950/20" },
+          { icon: Trophy,     label: "Recompensas",   value: `${rewards.length} ganadas`,                 color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
         ].map(({ icon: Icon, label, value, color, bg }) => (
           <Card key={label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -58,17 +79,20 @@ export default function DashboardPage() {
               Ver todas <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          {mockUserRoutines.map((ur) => (
+          {activeRoutines.length === 0 && (
+            <p className="text-sm text-muted-foreground">No tienes rutinas activas.</p>
+          )}
+          {activeRoutines.map((ur) => (
             <Card key={ur.id}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
-                    <Image src={asView(ur)?.thumbnail_url ?? ''} alt={asView(ur)?.title ?? ''} fill sizes="64px" className="object-cover" />
+                    <Image src={asView(ur)?.thumbnail_url ?? ""} alt={asView(ur)?.title ?? ""} fill sizes="64px" className="object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-sm">{asView(ur)?.title}</p>
-                      <DifficultyBadge difficulty={asView(ur)?.difficulty ?? 'beginner'} />
+                      <DifficultyBadge difficulty={asView(ur)?.difficulty ?? "beginner"} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {asView(ur)?.duration_minutes} min · {asView(ur)?.workouts_count} ejercicios
@@ -92,25 +116,24 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Sidebar: rewards + streak */}
+        {/* Sidebar: streak + rewards */}
         <div className="space-y-4">
-          {/* Streak */}
           <Card className="gradient-hero text-white border-0">
             <CardContent className="p-5 text-center space-y-2">
               <Flame className="w-8 h-8 text-amber-400 mx-auto" />
-              <p className="text-3xl font-extrabold">{mockUser.streak.current_streak}</p>
+              <p className="text-3xl font-extrabold">{streak?.current_streak ?? 0}</p>
               <p className="text-white/80 text-sm">días de racha</p>
-              <p className="text-white/50 text-xs">Récord: {mockUser.streak.longest_streak} días</p>
+              <p className="text-white/50 text-xs">Récord: {streak?.longest_streak ?? 0} días</p>
             </CardContent>
           </Card>
 
-          {/* Rewards */}
           <Card>
             <CardHeader className="p-4 pb-2">
               <p className="font-bold text-sm flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Recompensas</p>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-2">
-              {mockUserRewards.map((ur) => (
+              {rewards.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes recompensas.</p>}
+              {rewards.map((ur) => (
                 <div key={ur.id} className="flex items-center gap-2 text-sm">
                   <span className="text-xl">{getRewardIcon(ur.reward!)}</span>
                   <div>
@@ -138,7 +161,7 @@ export default function DashboardPage() {
             <Link key={w.id} href={`/workouts/${w.id}`}>
               <Card className="overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group">
                 <div className="relative h-32 bg-muted overflow-hidden">
-                  <Image src={w.thumbnail_url ?? ''} alt={w.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <Image src={w.thumbnail_url ?? ""} alt={w.title} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 <CardContent className="p-3">
                   <p className="font-semibold text-xs">{w.title}</p>

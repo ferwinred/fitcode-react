@@ -13,11 +13,13 @@
  *   }
  */
 
-import type { UserView, FavoritesState } from "@/lib/types";
+import type { UserView, FavoritesState, UserPreferences, ProgressState } from "@/lib/types";
 
 const KEYS = {
   USER: "fitcode:user",
   FAVORITES: "fitcode:favorites",
+  PREFERENCES: "fitcode:preferences",
+  PROGRESS: "fitcode:progress",
 } as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -71,4 +73,42 @@ export function getStoredFavorites(): FavoritesState {
 export function setStoredFavorites(favorites: FavoritesState): void {
   // TODO → PUT /api/favorites
   write(KEYS.FAVORITES, favorites);
+}
+
+// ─── Preferences ───────────────────────────────────────────────────────────────
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  theme: "dark",
+  language: "es",
+  notificationsEnabled: true,
+};
+
+export function getStoredPreferences(): UserPreferences {
+  // TODO → GET /api/preferences
+  return read<UserPreferences>(KEYS.PREFERENCES) ?? DEFAULT_PREFERENCES;
+}
+
+export function setStoredPreferences(preferences: UserPreferences): void {
+  // TODO → PUT /api/preferences
+  write(KEYS.PREFERENCES, preferences);
+}
+
+// ─── Progress ────────────────────────────────────────────────────────────────────
+
+const DEFAULT_PROGRESS: ProgressState = {
+  totalWorkoutsCompleted: 0,
+  totalMinutesExercised: 0,
+  lastWorkoutDate: null,
+  weeklyGoal: 4,
+  weeklyProgress: 0,
+};
+
+export function getStoredProgress(): ProgressState {
+  // TODO → GET /api/progress
+  return read<ProgressState>(KEYS.PROGRESS) ?? DEFAULT_PROGRESS;
+}
+
+export function setStoredProgress(progress: ProgressState): void {
+  // TODO → PUT /api/progress
+  write(KEYS.PROGRESS, progress);
 }

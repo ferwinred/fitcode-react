@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,12 +43,14 @@ export default function SignInPage() {
       </CardHeader>
       <CardContent className="p-6 space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
+<div className="space-y-1.5">
             <Label htmlFor="email" className="text-white/80">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="correo@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -61,6 +64,8 @@ export default function SignInPage() {
                 id="password"
                 type={showPass ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -85,13 +90,16 @@ export default function SignInPage() {
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
-          <Button
+<Button
             type="submit"
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl cursor-pointer"
             disabled={loading}
           >
             {loading ? "Cargando..." : "Iniciar sesión"}
           </Button>
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
         </form>
 
         {/* Hint de credenciales en desarrollo */}

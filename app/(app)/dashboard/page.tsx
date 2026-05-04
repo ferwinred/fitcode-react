@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Flame, Trophy, Dumbbell, TrendingUp, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";

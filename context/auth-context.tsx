@@ -3,14 +3,16 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
 import type { UserView, AuthState } from "@/lib/types";
 import { authService } from "@/src/services";
-import type { LoginCredentials } from "@/src/core/interfaces/IDataProvider";
+import type { LoginCredentials, RegisterPayload } from "@/src/core/interfaces/IDataProvider";
+import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 
 // ─── State & Actions ─────────────────────────────────────────────────────────
 
 type AuthAction =
   | { type: "INIT"; payload: UserView | null }
   | { type: "LOGIN"; payload: UserView }
-  | { type: "LOGOUT" };
+  | { type: "LOGOUT" }
+  | { type: "READY" };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -20,6 +22,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { user: action.payload, isAuthenticated: true, isLoading: false };
     case "LOGOUT":
       return { user: null, isAuthenticated: false, isLoading: false };
+    case "READY":
+      return { ...state, isLoading: false };
   }
 }
 
@@ -29,6 +33,7 @@ const initialState: AuthState = { user: null, isAuthenticated: false, isLoading:
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -40,13 +45,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    authService.getCurrentUser().then((user) => {
-      dispatch({ type: "INIT", payload: user });
-    });
+    authService
+      .getCurrentUser()
+      .then((user) => {
+        dispatch({ type: "INIT", payload: user });
+      })
+      .catch((error) => {
+        console.warn(getUserErrorMessage(error, "No se pudo restaurar la sesion"));
+        dispatch({ type: "READY" });
+      });
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     const user = await authService.login(credentials);
+    dispatch({ type: "LOGIN", payload: user });
+  }, []);
+
+  const register = useCallback(async (payload: RegisterPayload) => {
+    const user = await authService.register(payload);
     dispatch({ type: "LOGIN", payload: user });
   }, []);
 
@@ -56,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

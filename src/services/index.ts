@@ -1,5 +1,5 @@
 import { getDataProvider } from "@/src/core/providers/dataProvider";
-import type { LoginCredentials } from "@/src/core/interfaces/IDataProvider";
+import type { LoginCredentials, RegisterPayload } from "@/src/core/interfaces/IDataProvider";
 import type {
   UserView,
   FavoritesState,
@@ -17,6 +17,7 @@ const p = () => getDataProvider();
 
 export const authService = {
   login:          (credentials: LoginCredentials): Promise<UserView>    => p().login(credentials),
+  register:       (payload: RegisterPayload):     Promise<UserView>    => p().register(payload),
   logout:         ():                              Promise<void>         => p().logout(),
   getCurrentUser: ():                              Promise<UserView | null> => p().getCurrentUser(),
 };

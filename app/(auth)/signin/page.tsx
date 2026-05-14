@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
+import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 
 export default function SignInPage() {
   const { login } = useAuth();
@@ -29,7 +29,7 @@ export default function SignInPage() {
       await login({ email, password });
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+      setError(getUserErrorMessage(err, "Error al iniciar sesion"));
     } finally {
       setLoading(false);
     }
@@ -52,8 +52,6 @@ export default function SignInPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400"
             />
           </div>
@@ -67,8 +65,6 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400 pr-10"
               />
               <button

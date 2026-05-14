@@ -16,9 +16,21 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterPayload extends LoginCredentials {
+  fullName: string;
+  displayName?: string;
+  dateOfBirth: string;
+  gender: string;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  metadata?: string | null;
+  role?: string;
+}
+
 export interface IDataProvider {
   // ── Auth ──────────────────────────────────────────────────────────────────
   login(credentials: LoginCredentials): Promise<UserView>;
+  register(payload: RegisterPayload): Promise<UserView>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<UserView | null>;
 

@@ -12,7 +12,10 @@ export function getDataProvider(): IDataProvider {
 
   if (mode === "api") {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
-    instance = new ApiProvider(new HttpClient(baseUrl));
+    instance = new ApiProvider(new HttpClient(baseUrl, {}, () => {
+      if (typeof window === "undefined") return null;
+      return window.localStorage.getItem("fitcode:auth-token");
+    }));
   } else {
     instance = new LocalStorageProvider();
   }

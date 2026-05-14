@@ -1,4 +1,4 @@
-import type { IDataProvider, LoginCredentials } from "@/src/core/interfaces/IDataProvider";
+import type { IDataProvider, LoginCredentials, RegisterPayload } from "@/src/core/interfaces/IDataProvider";
 import type {
   UserView,
   FavoritesState,
@@ -60,6 +60,37 @@ export class LocalStorageProvider implements IDataProvider {
     const user = users.find((u) => u.id === match.user_id);
     if (!user) throw new Error("Usuario no encontrado");
 
+    lsWrite(LS_KEYS.CURRENT_USER, user);
+    return user;
+  }
+
+  async register(payload: RegisterPayload): Promise<UserView> {
+    this.ensureSeeded();
+
+    const users = lsRead<UserView[]>(LS_KEYS.USERS) ?? [];
+    if (users.some((user) => user.email === payload.email)) {
+      throw new Error("El email ya esta en uso");
+    }
+
+    const user: UserView = {
+      id: Date.now(),
+      full_name: payload.fullName,
+      email: payload.email,
+      display_name: payload.displayName ?? payload.fullName,
+      role_id: 1,
+      date_of_birth: payload.dateOfBirth,
+      sex: payload.gender,
+      height_cm: payload.heightCm ?? null,
+      weight_kg: payload.weightKg ?? null,
+      metadata: payload.metadata ? JSON.parse(payload.metadata) as Record<string, unknown> : null,
+      created_at: new Date().toISOString(),
+      updated_at: null,
+      deleted_at: null,
+      streak: { current_streak: 0, longest_streak: 0 },
+      progress_percent: 0,
+    };
+
+    lsWrite(LS_KEYS.USERS, [...users, user]);
     lsWrite(LS_KEYS.CURRENT_USER, user);
     return user;
   }

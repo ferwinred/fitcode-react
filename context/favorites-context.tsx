@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
 import type { FavoritesState } from "@/lib/types";
 import { favoritesService } from "@/src/services";
+import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 
 // ─── State & Actions ─────────────────────────────────────────────────────────
 
@@ -53,14 +54,21 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   // Hydrate from provider on mount
   useEffect(() => {
-    favoritesService.get().then((data) => {
-      dispatch({ type: "INIT", payload: data });
-    });
+    favoritesService
+      .get()
+      .then((data) => {
+        dispatch({ type: "INIT", payload: data });
+      })
+      .catch((error) => {
+        console.warn(getUserErrorMessage(error, "No se pudieron cargar favoritos"));
+      });
   }, []);
 
   // Persist every change
   useEffect(() => {
-    favoritesService.save(favorites);
+    favoritesService.save(favorites).catch((error) => {
+      console.warn(getUserErrorMessage(error, "No se pudieron guardar favoritos"));
+    });
   }, [favorites]);
 
   const toggleWorkout = useCallback((id: number) => {

@@ -9,12 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
-import { setStoredUser, clearStoredUser } from "@/lib/storage";
-import type { UserView } from "@/lib/types";
+import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -63,40 +62,20 @@ export default function SignUpPage() {
     setLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise((r) => setTimeout(r, 800));
-      
-      // Create new user object
-      const newUser: UserView = {
-        id: Date.now(),
-        full_name: `${firstName} ${lastName}`,
-        email: email,
-        display_name: firstName,
-        role_id: 1,
-        date_of_birth: dob || "1990-01-01",
-        sex: sex || "other",
-        height_cm: height ? parseInt(height) : null,
-        weight_kg: weight ? parseInt(weight) : null,
-        metadata: {
-          phone,
-          goal,
-        },
-        created_at: new Date().toISOString(),
-        updated_at: null,
-        deleted_at: null,
-        streak: {
-          current_streak: 0,
-          longest_streak: 0,
-        },
-        progress_percent: 0,
-      };
-      
-      // Save to localStorage and login
-      setStoredUser(newUser);
-      login(newUser);
+      await register({
+        email,
+        password,
+        fullName: `${firstName} ${lastName}`,
+        displayName: firstName,
+        dateOfBirth: dob || "1990-01-01",
+        gender: sex || "other",
+        heightCm: height ? Number(height) : null,
+        weightKg: weight ? Number(weight) : null,
+        metadata: JSON.stringify({ phone, goal }),
+      });
       router.push("/dashboard");
     } catch (err) {
-      setError("Error al crear la cuenta. Intenta de nuevo.");
+      setError(getUserErrorMessage(err, "Error al crear la cuenta. Intenta de nuevo."));
       console.error(err);
     } finally {
       setLoading(false);

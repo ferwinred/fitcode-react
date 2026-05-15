@@ -33,6 +33,23 @@ export default function RoutineDetailPage({ params }: { params: Promise<{ id: st
     });
   }, [user, id]);
 
+  const addRoutine = () => {
+    if (!user || !routine) return;
+
+    return () => {
+      userRoutineService.create({
+        user_id: user.id,
+        routine_id: routine.id,
+        start_date: Date.now().toString(), // o null si quieres que el usuario elija cuándo empezar
+        end_date: null,
+        status: "active",
+        progress_percent: 0,
+      }).then((ur) => {
+        setUserRoutine(ur);
+      });
+    }
+  }
+
   if (!routine) return <div className="flex items-center justify-center h-64 text-muted-foreground">Cargando...</div>;
 
   const progress = userRoutine?.progress_percent ?? 0;
@@ -117,7 +134,7 @@ export default function RoutineDetailPage({ params }: { params: Promise<{ id: st
         {/* Sidebar */}
         <div className="space-y-4">
           {routine.is_free ? (
-            <Button className="w-full bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl" size="lg">
+            <Button className="w-full bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl cursor-pointer" size="lg" onClick={addRoutine()}>
               {userRoutine ? "Continuar rutina" : "Iniciar rutina"}
             </Button>
           ) : (

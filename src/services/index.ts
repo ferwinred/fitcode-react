@@ -47,6 +47,7 @@ export const favoritesService = {
 
 export const userRoutineService = {
   getByUser: (userId: number):          Promise<UserRoutine[]>  => p().getUserRoutines(userId),
+  create:    (data: Omit<UserRoutine, "id" | "created_at" | "updated_at">): Promise<UserRoutine> => p().createUserRoutine(data.user_id, data.routine_id, data),
 };
 
 export const sessionService = {

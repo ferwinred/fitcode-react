@@ -113,6 +113,10 @@ function isPublic(value: number | boolean | null | undefined): boolean {
 export class ApiProvider implements IDataProvider {
   constructor(private readonly http: IHttpClient) {}
 
+  async createUserRoutine(userId: number, routineId: number, data: Omit<UserRoutine, "id" | "created_at" | "updated_at" | "routine_id" | "user_id">): Promise<UserRoutine> {
+    return await this.http.post<UserRoutine>(`/users/${userId}/routines/${routineId}/assign`, data);
+  }
+
   async login(credentials: LoginCredentials): Promise<UserView> {
     const auth = await this.http.post<ApiAuthResponse>("/auth/login", credentials);
     writeToken(auth.token);

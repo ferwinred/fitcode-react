@@ -12,10 +12,13 @@ import { useAuth } from "@/context/auth-context";
 import { workoutService, userRoutineService, rewardService, streakService } from "@/src/services";
 import { getRewardIcon } from "@/lib/mock-data";
 import type { WorkoutView, UserRoutine, UserReward, Streak } from "@/lib/types";
+import { useAuthGuard } from "@/guards/authGuard";
 
 const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
 
 export default function DashboardPage() {
+  useAuthGuard();
+
   const { user } = useAuth();
 
   const [recommended, setRecommended] = useState<WorkoutView[]>([]);

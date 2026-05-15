@@ -94,6 +94,7 @@ export interface Routine {
   author?: User;                        // join opcional
   is_public: boolean;
   metadata: Record<string, unknown> | null;
+  thumbnail_url: string | null;
   created_at: string;
   updated_at: string | null;
 }

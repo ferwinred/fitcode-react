@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
+import { createContext, useContext, useEffect, useReducer, useCallback, useState } from "react";
 import type { UserView, AuthState } from "@/lib/types";
 import { authService } from "@/src/services";
 import type { LoginCredentials, RegisterPayload } from "@/src/core/interfaces/IDataProvider";
@@ -37,22 +37,27 @@ interface AuthContextValue extends AuthState {
   logout: () => Promise<void>;
 }
 
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const [ loading, setLoading ] = useState(true);
+  const [ isAuthenticated, setIsAuthenticated ] = useState(false);
 
   useEffect(() => {
     authService
       .getCurrentUser()
       .then((user) => {
         dispatch({ type: "INIT", payload: user });
+        setIsAuthenticated(true);
       })
       .catch((error) => {
         console.warn(getUserErrorMessage(error, "No se pudo restaurar la sesion"));
         dispatch({ type: "READY" });
+        setIsAuthenticated(false);
       });
   }, []);
 

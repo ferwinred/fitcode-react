@@ -20,12 +20,12 @@ export default function LandingNavbar() {
     <header className="relative z-20 w-full">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-white">
-          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center">
+        <Link href="/" className="flex items-center gap-0 font-bold text-xl text-white">
+          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center me-2">
             <Zap className="w-4 h-4 text-white" />
           </div>
           Fit<span className="text-amber-400">Code</span>
-        </Link>
+          </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">

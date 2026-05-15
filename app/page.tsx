@@ -29,7 +29,7 @@ export default function LandingPage() {
               </div>
               <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight">
                 Entrena con
-                <span className="text-amber-400"> código</span>,
+                <span className="text-amber-400"> FitCode</span>,
                 <br />vive con
                 <span className="text-amber-400"> fuerza</span>
               </h1>
@@ -40,7 +40,7 @@ export default function LandingPage() {
                 <Button size="lg" asChild className="bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl px-6">
                   <Link href="/workouts">Explorar ejercicios <ArrowRight className="w-4 h-4 ml-1" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="border-white/30 text-black hover:bg-white/10 hover:text-white rounded-xl px-6 cursor-pointer">
+                <Button size="lg" asChild className="bg-white/20 border-white/80 text-white hover:bg-white hover:text-black rounded-xl px-6 cursor-pointer">
                   <Link href="/routines">Ver rutinas</Link>
                 </Button>
               </div>

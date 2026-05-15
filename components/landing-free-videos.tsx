@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Heart, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FreeBadge } from "@/components/badges";
 import { getFreeVideos } from "@/lib/services/data-service";
 import { formatDuration } from "@/lib/mock-data";
 import type { WorkoutVideoView } from "@/lib/types";
+import { useFavorites } from "@/context/favorites-context";
 
 export default function LandingFreeVideos() {
   const [videos, setVideos] = useState<WorkoutVideoView[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isVideoFavorite, toggleVideo } = useFavorites();
+  const [hoveredVideo, setHoveredVideo] = useState<number | null>(null);
 
   useEffect(() => {
     getFreeVideos(2).then((data) => {
@@ -37,37 +39,117 @@ export default function LandingFreeVideos() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-5">
-            {videos.map((v) => (
-              <Link key={v.id} href={`/videos/${v.id}`}>
-                <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group">
-                  <div className="relative h-48 bg-muted overflow-hidden">
-                    <Image
-                      src={v.thumbnail_url ?? ''}
-                      alt={v.title}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                        <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+            {videos.map((v) => {
+          const videoId = getYoutubeVideoId(v.url);
+
+          const thumbnail = videoId
+            ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            : v.thumbnail_url;
+
+          const isHovered = hoveredVideo === v.id;
+
+          return (
+            <div
+              key={v.id}
+              className="relative group"
+              onMouseEnter={() => setHoveredVideo(v.id)}
+              onMouseLeave={() => setHoveredVideo(null)}
+            >
+              <Link href={`/videos/${v.id}`}>
+                <Card className="overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                  {/* VIDEO PREVIEW */}
+                  <div className="relative h-52 bg-black overflow-hidden">
+                    {/* Hover Preview */}
+                    {isHovered && videoId ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0`}
+                        title={v.title}
+                        allow="autoplay"
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                      />
+                    ) : (
+                      <img
+                        src={thumbnail ?? ""}
+                        alt={v.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/20 pointer-events-none" />
+
+                    {/* Play button */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-14 h-14 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
+                        <Play className="w-6 h-6 text-black fill-black ml-0.5" />
                       </div>
                     </div>
-                    <div className="absolute top-2 left-2"><FreeBadge isFree={v.is_free} /></div>
-                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
+
+                    {/* Free badge */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <FreeBadge isFree={v.is_free} />
+                    </div>
+
+                    {/* Duration */}
+                    <div className="absolute bottom-2 right-2 z-10 bg-black/70 backdrop-blur text-white text-xs px-2 py-1 rounded-md">
                       {formatDuration(v.duration_seconds ?? 0)}
                     </div>
                   </div>
-                  <CardContent className="p-4">
-                    <p className="font-semibold text-sm">{v.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">❤️ {v.likes} likes</p>
+
+                  {/* CONTENT */}
+                  <CardContent className="p-4 space-y-2">
+                    <p className="font-semibold text-sm line-clamp-2 leading-relaxed">
+                      {v.title}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {v.video_type}
+                      </p>
+
+                      <p className="text-xs text-muted-foreground">
+                        ❤️ {v.likes}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+
+              {/* FAVORITE BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  toggleVideo(v.id);
+                }}
+                className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-white/90 dark:bg-card/90 backdrop-blur flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+              >
+                <Heart
+                  className={`w-4 h-4 transition-colors ${
+                    isVideoFavorite(v.id)
+                      ? "fill-red-500 text-red-500"
+                      : "text-muted-foreground"
+                  }`}
+                />
+              </button>
+            </div>
+          );
+        })}
           </div>
         )}
       </div>
     </section>
   );
+}
+
+function getYoutubeVideoId(url?: string) {
+  if (!url) return null;
+
+  const regExp =
+    /(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([^"&?/\s]{11})/;
+
+  const match = url.match(regExp);
+
+  return match?.[1] ?? null;
 }

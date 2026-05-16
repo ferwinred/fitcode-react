@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Zap } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,21 +13,28 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       {/* Header */}
       <header className="relative z-10 p-5 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-0 font-bold text-xl text-white">
+        <Link
+          href="/"
+          className="flex items-center gap-0 font-bold text-xl text-white"
+        >
           <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center me-2">
             <Zap className="w-4 h-4 text-white" />
           </div>
           Fit<span className="text-amber-400">Code</span>
         </Link>
         <div className="flex gap-4 text-sm text-white/70">
-          <Link href="/signin" className="hover:text-white transition-colors">Iniciar sesión</Link>
-          <Link href="/signup" className="hover:text-white transition-colors">Registrarse</Link>
+          <Link href="/signin" className="hover:text-white transition-colors">
+            Iniciar sesión
+          </Link>
+          <Link href="/signup" className="hover:text-white transition-colors">
+            Registrarse
+          </Link>
         </div>
       </header>
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        {children}
+        <Suspense fallback={<div>Cargando...</div>}>{children}</Suspense>
       </div>
     </div>
   );

@@ -57,6 +57,7 @@ type ApiRoutine = {
   author?: ApiUser | null;
   isPublic?: number | boolean | null;
   metadata: string | Record<string, unknown> | null;
+  thumbnailUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
 };
@@ -82,10 +83,12 @@ function readToken(): string | null {
 
 function writeToken(token: string): void {
   if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
+  document.cookie = `token=${token}; path=/; SameSite=Lax`;
 }
 
 function clearToken(): void {
   if (typeof window !== "undefined") window.localStorage.removeItem(TOKEN_KEY);
+  document.cookie = "token=; path=/; SameSite=Lax;";
 }
 
 function parseMetadata(value: string | Record<string, unknown> | null): Record<string, unknown> | null {
@@ -109,6 +112,10 @@ function isPublic(value: number | boolean | null | undefined): boolean {
 
 export class ApiProvider implements IDataProvider {
   constructor(private readonly http: IHttpClient) {}
+
+  async createUserRoutine(userId: number, routineId: number, data: Omit<UserRoutine, "id" | "created_at" | "updated_at" | "routine_id" | "user_id">): Promise<UserRoutine> {
+    return await this.http.post<UserRoutine>(`/users/${userId}/routines/${routineId}/assign`, data);
+  }
 
   async login(credentials: LoginCredentials): Promise<UserView> {
     const auth = await this.http.post<ApiAuthResponse>("/auth/login", credentials);
@@ -154,6 +161,7 @@ export class ApiProvider implements IDataProvider {
     if (params?.limit !== undefined) qs.set("limit", String(params.limit));
     const workouts = asArray(await this.http.get<ApiWorkout[] | PageResponse<ApiWorkout>>(`/workouts?${qs}`))
       .map((workout) => this.mapWorkout(workout));
+      console.log("Fetched workouts:", workouts);
     return params?.limit ? workouts.slice(0, params.limit) : workouts;
   }
 
@@ -171,6 +179,7 @@ export class ApiProvider implements IDataProvider {
     if (params?.limit !== undefined) qs.set("limit", String(params.limit));
     const routines = asArray(await this.http.get<ApiRoutine[] | PageResponse<ApiRoutine>>(`/routines?${qs}`))
       .map((routine) => this.mapRoutine(routine));
+      console.log("Fetched routines:", routines);
     return params?.limit ? routines.slice(0, params.limit) : routines;
   }
 
@@ -188,6 +197,7 @@ export class ApiProvider implements IDataProvider {
     if (params?.limit !== undefined) qs.set("limit", String(params.limit));
     const videos = asArray(await this.http.get<ApiVideo[] | PageResponse<ApiVideo>>(`/workout-videos?${qs}`))
       .map((video) => this.mapVideo(video));
+      console.log("Fetched videos:", videos);
     return params?.limit ? videos.slice(0, params.limit) : videos;
   }
 
@@ -266,6 +276,7 @@ export class ApiProvider implements IDataProvider {
   }
 
   private mapWorkout(workout: ApiWorkout): WorkoutView {
+    // console.log("Mapping workout:", workout);
     return {
       id: workout.id,
       title: workout.title,
@@ -295,6 +306,7 @@ export class ApiProvider implements IDataProvider {
 
   private mapRoutine(routine: ApiRoutine): RoutineView {
     const metadata = parseMetadata(routine.metadata);
+    // console.log("Mapping routine:", routine, "Parsed metadata:", metadata);
     return {
       id: routine.id,
       title: routine.title,
@@ -311,12 +323,13 @@ export class ApiProvider implements IDataProvider {
       categories: Array.isArray(metadata?.categories) ? metadata.categories.map(String) : [],
       rating: Number(metadata?.rating ?? 0),
       is_free: isPublic(routine.isPublic),
-      thumbnail_url: typeof metadata?.thumbnail_url === "string" ? metadata.thumbnail_url : null,
+      thumbnail_url: routine.thumbnailUrl ?? null,
     };
   }
 
   private mapVideo(video: ApiVideo): WorkoutVideoView {
     const workout = video.workout ? this.mapWorkout(video.workout) : undefined;
+    // console.log("Mapping video:", video, "Mapped workout:", workout);
     return {
       id: video.id,
       workout_id: video.workout?.id ?? null,

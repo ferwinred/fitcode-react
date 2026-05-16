@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 export default function SignInPage() {
   const { login } = useAuth();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -27,7 +28,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       await login({ email, password });
-      router.push("/dashboard");
+      router.push(redirect || "/dashboard");
     } catch (err) {
       setError(getUserErrorMessage(err, "Error al iniciar sesion"));
     } finally {

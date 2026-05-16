@@ -38,8 +38,8 @@ export default function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[oklch(0.18_0.05_255)]/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-white">
-          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center">
+        <Link href="/" className="flex items-center gap-0 font-bold text-xl text-white">
+          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center me-2">
             <Zap className="w-4 h-4 text-white" />
           </div>
           <span>Fit<span className="text-amber-400">Code</span></span>

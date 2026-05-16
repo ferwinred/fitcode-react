@@ -104,6 +104,20 @@ export class LocalStorageProvider implements IDataProvider {
     return lsRead<UserView>(LS_KEYS.CURRENT_USER);
   }
 
+  async createUserRoutine(userId: number, routineId: number, data: Omit<UserRoutine, "id" | "created_at" | "updated_at" | "routine_id" | "user_id">): Promise<UserRoutine> {
+    this.ensureSeeded();
+    const all = lsRead<UserRoutine[]>(LS_KEYS.USER_ROUTINES) ?? [];
+    const newUserRoutine: UserRoutine = {
+      id: Date.now(),
+      user_id: userId,
+      routine_id: routineId,
+      created_at: new Date().toISOString(),
+      updated_at: null,
+      ...data,
+    };
+    lsWrite(LS_KEYS.USER_ROUTINES, [...all, newUserRoutine]);
+    return newUserRoutine;
+  }
   // ── Workouts ────────────────────────────────────────────────────────────────
 
   async getWorkouts(params?: { free?: boolean; limit?: number }): Promise<WorkoutView[]> {

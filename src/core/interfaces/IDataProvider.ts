@@ -52,6 +52,7 @@ export interface IDataProvider {
 
   // ── User Routines ─────────────────────────────────────────────────────────
   getUserRoutines(userId: number): Promise<UserRoutine[]>;
+  createUserRoutine(userId: number, routineId: number, data: Omit<UserRoutine, "id" | "created_at" | "updated_at" | "routine_id" | "user_id">): Promise<UserRoutine>;
 
   // ── Sessions ──────────────────────────────────────────────────────────────
   getSessions(userRoutineId: number): Promise<UserRoutineSession[]>;

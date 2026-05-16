@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Zap, LayoutDashboard, Dumbbell, ListChecks, Video, User, Heart, ClipboardList, CreditCard } from "lucide-react";
 import Navbar from "@/components/navbar";
 
-const sideLinks = [
+export const sideLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/workouts", icon: Dumbbell, label: "Ejercicios" },
   { href: "/routines", icon: ListChecks, label: "Rutinas" },

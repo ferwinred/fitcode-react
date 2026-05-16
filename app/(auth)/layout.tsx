@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { ReactNode } from "react";
@@ -11,8 +13,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       {/* Header */}
       <header className="relative z-10 p-5 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-white">
-          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center">
+        <Link href="/" className="flex items-center gap-0 font-bold text-xl text-white">
+          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center me-2">
             <Zap className="w-4 h-4 text-white" />
           </div>
           Fit<span className="text-amber-400">Code</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
@@ -16,10 +16,11 @@ export default function SignUpPage() {
   const { register, isAuthenticated } = useAuth();
   
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    router.push("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
   
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -97,7 +98,7 @@ export default function SignUpPage() {
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {step === 1 && (
             <>
               <div className="grid grid-cols-2 gap-3">
@@ -126,7 +127,7 @@ export default function SignUpPage() {
               />
               <Field 
                 id="telefono" 
-                label="Teléfono" 
+                label="Telefono" 
                 type="tel" 
                 placeholder="+1 234 567 8900" 
                 value={phone}
@@ -157,7 +158,7 @@ export default function SignUpPage() {
                 onChange={(e) => setDob(e.target.value)}
               />
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-white/80">Contraseña</Label>
+                <Label htmlFor="password" className="text-white/80">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -169,7 +170,12 @@ export default function SignUpPage() {
                     minLength={8}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-amber-400 pr-10"
                   />
-                  <button type="button" onClick={() => setShowPass((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPass((s) => !s)} 
+                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80"
+                  >
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -231,7 +237,7 @@ export default function SignUpPage() {
               </Button>
             )}
             <Button type="submit" className="flex-1 cursor-pointer bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl" disabled={loading}>
-              {loading ? "Creando cuenta..." : step === 1 ? "Continuar" : "Crear cuenta"}
+              {loading ? "Creando cuenta..." : step === 1 ? "Continuar" : "Crear-cuenta"}
             </Button>
           </div>
         </form>

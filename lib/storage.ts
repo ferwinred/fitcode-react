@@ -63,7 +63,7 @@ export function clearStoredUser(): void {
 
 // ─── Favorites ───────────────────────────────────────────────────────────────
 
-const DEFAULT_FAVORITES: FavoritesState = { workoutIds: [], videoIds: [] };
+const DEFAULT_FAVORITES: FavoritesState = { workoutIds: [], videoIds: [], routineIds: [] };
 
 export function getStoredFavorites(): FavoritesState {
   // TODO → GET /api/favorites

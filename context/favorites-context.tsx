@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useReducer, useCallback } from "react";
 import type { FavoritesState } from "@/lib/types";
-import { favoritesService } from "@/src/services";
+import { authService, favoritesService } from "@/src/services";
 import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 
 // ─── State & Actions ─────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ function favoritesReducer(state: FavoritesState, action: FavoritesAction): Favor
   }
 }
 
-const initialState: FavoritesState = { workoutIds: [], videoIds: [] };
+const initialState: FavoritesState = { workoutIds: [], videoIds: [], routineIds: [] };
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
-export function FavoritesProvider({ children }: { children: React.ReactNode }) {
+export const FavoritesProvider = ({ children }: { children: React.ReactNode }) => {
   const [favorites, dispatch] = useReducer(favoritesReducer, initialState);
 
   // Hydrate from provider on mount

@@ -72,6 +72,7 @@ export default function SignUpPage() {
         heightCm: height ? Number(height) : null,
         weightKg: weight ? Number(weight) : null,
         metadata: JSON.stringify({ phone, goal }),
+        role: "user",
       });
       router.push("/dashboard");
     } catch (err) {
@@ -128,7 +129,7 @@ export default function SignUpPage() {
                 id="telefono" 
                 label="Teléfono" 
                 type="tel" 
-                placeholder="+1 234 567 8900" 
+                placeholder="310 123 4567" 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
@@ -142,9 +143,8 @@ export default function SignUpPage() {
                     className="w-full h-9 rounded-md border border-white/20 bg-white/10 text-white px-3 text-sm appearance-none focus:outline-none focus:border-amber-400"
                   >
                     <option value="" className="text-gray-900">Seleccionar</option>
-                    <option value="male" className="text-gray-900">Masculino</option>
-                    <option value="female" className="text-gray-900">Femenino</option>
-                    <option value="other" className="text-gray-900">Otro</option>
+                    <option value="M" className="text-gray-900">Masculino</option>
+                    <option value="F" className="text-gray-900">Femenino</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 </div>

@@ -11,7 +11,10 @@ import type {
   UserWorkoutProgress,
   Streak,
   UserReward,
+  Plan,
+  PlanView,
 } from "@/lib/types";
+import { getPossibleMiddlewareFilenames } from "next/dist/build/utils";
 
 const p = () => getDataProvider();
 
@@ -42,7 +45,16 @@ export const videoService = {
 
 export const favoritesService = {
   get:  ():                              Promise<FavoritesState> => p().getFavorites(),
-  save: (f: FavoritesState):            Promise<void>           => p().saveFavorites(f),
+  save: (f: FavoritesState):            Promise<boolean>           => p().saveFavorites(f),
+};
+
+export const planService = {
+  createManual: (data: { routine_id: number; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }): Promise<void> => p().createManualPlan(data.routine_id, data.user_id, data.payload),
+  createAI:     (data: { routine_id: number; user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }): Promise<void> => p().createAIPlan(data.routine_id, data.user_id, data.preferences, data.payload),
+  getPlans:     (params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]> => p().getPlans(params),
+  getPlanById: (id: number): Promise<PlanView | null> => p().getPlanById(id),
+  updatePlan: (id: number, data: Partial<Plan>): Promise<void> => p().updatePlan(id, data),
+  deletePlan: (id: number): Promise<void> => p().deletePlan(id),
 };
 
 export const userRoutineService = {

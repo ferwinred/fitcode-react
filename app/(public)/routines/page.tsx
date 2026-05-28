@@ -24,7 +24,7 @@ export default function RoutinesPage() {
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
 
   useEffect(() => {
-    routineService.getAll().then(setRoutines);
+    routineService.getAll({ free: true }).then(setRoutines);
   }, []);
 
   const filtered = routines.filter((r) => {

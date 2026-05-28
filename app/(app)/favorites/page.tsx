@@ -7,11 +7,11 @@ import { Heart, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DifficultyBadge, FreeBadge } from "@/components/badges";
 import { useFavorites } from "@/context/favorites-context";
-import { workoutService, videoService } from "@/src/services";
+import { workoutService, videoService, routineService } from "@/src/services";
 import { formatDuration } from "@/lib/mock-data";
-import type { WorkoutView, WorkoutVideoView } from "@/lib/types";
+import type { WorkoutView, WorkoutVideoView, RoutineView } from "@/lib/types";
 
-const tabs = ["Ejercicios", "Videos"] as const;
+const tabs = ["Ejercicios", "Videos", "Rutinas"] as const;
 
 export default function FavoritesPage() {
   const { favorites } = useFavorites();
@@ -19,14 +19,17 @@ export default function FavoritesPage() {
 
   const [allWorkouts, setAllWorkouts] = useState<WorkoutView[]>([]);
   const [allVideos,   setAllVideos]   = useState<WorkoutVideoView[]>([]);
+  const [ allRoutines,  setAllRoutines]  = useState<RoutineView[]>([]);
 
   useEffect(() => {
     workoutService.getAll().then(setAllWorkouts);
     videoService.getAll().then(setAllVideos);
+    routineService.getAll().then(setAllRoutines);
   }, []);
 
   const favWorkouts = allWorkouts.filter((w) => favorites.workoutIds.includes(w.id));
   const favVideos   = allVideos.filter((v) => favorites.videoIds.includes(v.id));
+  const favRoutines = allRoutines.filter((r) => favorites.routineIds.includes(r.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -45,7 +48,7 @@ export default function FavoritesPage() {
               tab === t ? "bg-white dark:bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t} {t === "Ejercicios" ? `(${favWorkouts.length})` : `(${favVideos.length})`}
+            {t} {t === "Ejercicios" ? `(${favWorkouts.length})` : t === "Videos" ? `(${favVideos.length})` : `(${favRoutines.length})`}
           </button>
         ))}
       </div>
@@ -107,6 +110,34 @@ export default function FavoritesPage() {
           </div>
         </>
       )}
+
+      
+      {tab === "Rutinas" && (
+        <>
+          {favRoutines.length === 0 && (
+            <p className="text-sm text-muted-foreground">No tienes rutinas favoritas aún. Explora la <Link href="/routines" className="text-amber-500 hover:underline">biblioteca de rutinas</Link>.</p>
+          )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {favRoutines.map((r) => (
+              <Link key={r.id} href={`/routines/${r.id}`}>
+                <Card className="overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group">
+                  <div className="relative h-40 bg-muted overflow-hidden">
+                    <Image src={r.thumbnail_url ?? ""} alt={r.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute top-2 left-2"><FreeBadge isFree={r.is_free ?? false} /></div>
+                  </div>
+                  <CardContent className="p-3 space-y-1">
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-semibold text-sm">{r.title}</p>
+                      <DifficultyBadge difficulty={r.difficulty} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

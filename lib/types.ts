@@ -41,6 +41,16 @@ export interface User {
   deleted_at: string | null;
 }
 
+// ────── favorites ──────────────────────────────────────────────────────────────
+
+export interface Favorite {
+  id: number;
+  user_id: number;
+  target_id: number;
+  type: "workout" | "video" | "routine";
+  created_at: string;
+}
+
 // ─── workout_categories ──────────────────────────────────────────────────────
 
 export interface WorkoutCategory {
@@ -88,7 +98,7 @@ export interface Routine {
   id: number;
   title: string;
   description: string | null;
-  difficulty: "beginner" | "intermediate" | "advanced" | null;
+  difficulty: "beginner" | "intermediate" | "advanced";
   duration_minutes: number | null;
   author_user_id: number | null;
   author?: User;                        // join opcional
@@ -113,6 +123,22 @@ export interface RoutineWorkout {
   duration_seconds: number | null;
   notes: string | null;
   created_at: string;
+}
+
+
+// ─── plans ────────────────────────────────────────────────────────────────
+
+export interface Plan {
+  id: number;
+  title: string;
+  description: string | null;                // join opcional
+  difficulty: string;
+  is_public: boolean;
+  metadata: Record<string, unknown> | null;
+  thumbnail_url: string | null;
+  created_at: string;
+  updated_at: string | null;
+  routines: Routine[];                        // join opcional con plan_routines
 }
 
 // ─── user_routines ───────────────────────────────────────────────────────────
@@ -242,6 +268,12 @@ export interface RoutineView extends Routine {
   thumbnail_url: string | null;        // primer thumbnail de sus workouts o metadata
 }
 
+/** Plan con campos calculados que el backend puede devolver en un endpoint de listado */
+export interface PlanView extends Plan {
+  routines_count: number;              // COUNT de plan_routines
+  is_free: boolean;                    // lógica de negocio (role, metadata, etc.)
+}
+
 /** Video con campos de UI que el backend puede devolver enriquecido */
 export interface WorkoutVideoView extends WorkoutVideo {
   likes: number;                       // de tabla futura (likes/reactions)
@@ -266,6 +298,12 @@ export interface AuthState {
 export interface FavoritesState {
   workoutIds: number[];
   videoIds: number[];
+  routineIds: number[];
+}
+
+export interface PlansState {
+  routineIds: number[];
+  plans: PlanView[];
 }
 
 // ─── Preferencias ───────────────────────────────────────────────────────────

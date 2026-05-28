@@ -9,6 +9,8 @@ import type {
   UserWorkoutProgress,
   Streak,
   UserReward,
+  PlanView,
+  Plan,
 } from "@/lib/types";
 
 export interface LoginCredentials {
@@ -48,7 +50,15 @@ export interface IDataProvider {
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   getFavorites(): Promise<FavoritesState>;
-  saveFavorites(favorites: FavoritesState): Promise<void>;
+  saveFavorites(favorites: FavoritesState): Promise<boolean>;
+
+  // ── Plans ───────────────────────────────────────────────────────────────
+  createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" >): Promise<void>;
+  createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void>;
+  getPlans(params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]>;
+  getPlanById(id: number): Promise<PlanView | null>;
+  updatePlan(id: number, data: Partial<Plan>): Promise<void>;
+  deletePlan(id: number): Promise<void>;
 
   // ── User Routines ─────────────────────────────────────────────────────────
   getUserRoutines(userId: number): Promise<UserRoutine[]>;

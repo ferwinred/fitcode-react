@@ -216,7 +216,7 @@ export const seedUserRewards: UserReward[] = [
 // ─── Favorites por usuario ────────────────────────────────────────────────────
 
 export const seedFavorites: Record<number, FavoritesState> = {
-  1: { workoutIds: [1, 2, 4], videoIds: [1, 2] },
-  2: { workoutIds: [1, 5],    videoIds: [1] },
-  3: { workoutIds: [1, 2, 3, 4, 5, 6], videoIds: [1, 2, 3] },
+  1: { workoutIds: [1, 2, 4], videoIds: [1, 2], routineIds: [1] },
+  2: { workoutIds: [1, 5],    videoIds: [1], routineIds: [] },
+  3: { workoutIds: [1, 2, 3, 4, 5, 6], videoIds: [1, 2, 3], routineIds: [2,4] },
 };

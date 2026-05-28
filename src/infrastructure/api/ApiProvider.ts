@@ -12,6 +12,9 @@ import type {
   UserWorkoutProgress,
   Streak,
   UserReward,
+  Favorite,
+  Plan,
+  PlanView,
 } from "@/lib/types";
 
 type PageResponse<T> = { content: T[] };
@@ -52,7 +55,7 @@ type ApiRoutine = {
   id: number;
   title: string;
   description: string | null;
-  difficulty: "beginner" | "intermediate" | "advanced" | null;
+  difficulty: "beginner" | "intermediate" | "advanced";
   durationMinutes: number | null;
   author?: ApiUser | null;
   isPublic?: number | boolean | null;
@@ -210,15 +213,73 @@ export class ApiProvider implements IDataProvider {
   }
 
   async getFavorites(): Promise<FavoritesState> {
-    if (typeof window === "undefined") return { workoutIds: [], videoIds: [] };
-    const raw = window.localStorage.getItem(FAVORITES_KEY);
-    return raw ? JSON.parse(raw) as FavoritesState : { workoutIds: [], videoIds: [] };
+   
+    const userId = await this.getCurrentUser().then((user) => user?.id ?? 0);
+
+    const favorites = await this.http.get<Favorite[]>(`/favorites/${userId}`);
+
+    if (!favorites || favorites.length === 0) {
+      return { workoutIds: [], videoIds: [], routineIds: [] };
+    }
+
+    const favoritesState: FavoritesState = favorites.reduce((state, fav) => {
+      if (fav.type === "workout" && fav.id !== null) state.workoutIds.push(fav.target_id);
+      else if (fav.type === "video") state.videoIds.push(fav.target_id);
+      else if (fav.type === "routine") state.routineIds.push(fav.target_id);
+      return state;
+    }, { workoutIds: [] as number[], videoIds: [] as number[], routineIds: [] as number[] });
+
+    return favoritesState;
   }
 
-  async saveFavorites(favorites: FavoritesState): Promise<void> {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  async saveFavorites(favorites: FavoritesState): Promise<boolean> {
+    const userId = await this.getCurrentUser().then((user) => user?.id ?? 0);
+
+    const favoritesToSave = favorites.workoutIds.map((id) => ({ type: "workout", target_id: id, user_id: userId }))
+      .concat(favorites.videoIds.map((id) => ({ type: "video", target_id: id, user_id: userId })))
+      .concat(favorites.routineIds.map((id) => ({ type: "routine", target_id: id, user_id: userId })));
+
+    favoritesToSave.forEach((fav) => {
+        this.http.post<Favorite[]>(`/favorites/${userId}`, { body: fav }).then(() => {
+        }).catch((error) => {
+          console.error("Error saving favorites:", error);
+          return false;
+        });
+      });
+
+      return true;
+
+  }
+
+  async createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
+    await this.http.post(`/users/${userId}/plans/manual`, { body: { ...payload, routine_id: routineId } });
+  }
+
+  async createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
+    await this.http.post(`/users/${userId}/plans/ai`, { body: { ...payload, routine_id: routineId, preferences } });
+  }
+
+  async getPlans(params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]> {
+    const qs = new URLSearchParams();
+    if (params?.free !== undefined) qs.set("free", String(params.free));
+    if (params?.limit !== undefined) qs.set("limit", String(params.limit));
+    return asArray(await this.http.get<PlanView[] | PageResponse<PlanView>>(`/plans?${qs}`));
+  }
+
+  async getPlanById(id: number): Promise<PlanView | null> {
+    try { return await this.http.get<PlanView>(`/plans/${id}`); }
+    catch (error) {
+      if (isApiClientError(error) && error.status === 404) return null;
+      throw error;
     }
+  }
+
+  async updatePlan(id: number, data: Partial<Plan>): Promise<void> {
+    await this.http.put(`/plans/${id}`, { body: data });
+  }
+
+  async deletePlan(id: number): Promise<void> {
+    await this.http.delete(`/plans/${id}`);
   }
 
   async getUserRoutines(userId: number): Promise<UserRoutine[]> {

@@ -22,6 +22,7 @@ export const LS_KEYS = {
   USER_REWARDS:  "fitcode:user_rewards",
   FAVORITES:     "fitcode:favorites",       // sufijo ":userId" por usuario
   CURRENT_USER:  "fitcode:user",
+  PLANS:         "fitcode:plans",           // sufijo ":userId" por usuario
 } as const;
 
 function lsWrite<T>(key: string, value: T): void {

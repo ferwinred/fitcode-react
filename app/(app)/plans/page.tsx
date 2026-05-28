@@ -30,13 +30,28 @@ const statusColor: Record<string, string> = {
 export default function PlansPage() {
   const { user } = useAuth();
   const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     userRoutineService.getByUser(user.id).then(setUserRoutines);
+    setLoading(false);
   }, [user]);
 
   return (
+    loading ? (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center space-y-3">
+            <Sparkles className="w-10 h-10 text-muted-foreground mx-auto animate-pulse" />
+            <p className="font-semibold">Cargando planes...</p>
+          </CardContent>
+        </Card>
+      </div>
+    ) : (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -122,5 +137,5 @@ export default function PlansPage() {
         })}
       </div>
     </div>
-  );
+  ));
 }

@@ -10,6 +10,8 @@ import type {
   UserWorkoutProgress,
   Streak,
   UserReward,
+  Plan,
+  PlanView,
 } from "@/lib/types";
 import { mockWorkouts, mockRoutines, mockVideos } from "@/lib/mock-data";
 import { runSeedIfNeeded, LS_KEYS } from "./LocalStorageSeeder";
@@ -40,6 +42,24 @@ function lsRemove(key: string): void {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export class LocalStorageProvider implements IDataProvider {
+  createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  getPlans(params?: { userId: number; free?: boolean; limit?: number; }): Promise<PlanView[]> {
+    throw new Error("Method not implemented.");
+  }
+  getPlanById(id: number): Promise<PlanView | null> {
+    throw new Error("Method not implemented.");
+  }
+  updatePlan(id: number, data: Partial<Plan>): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  deletePlan(id: number): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
 
   private ensureSeeded(): void {
     runSeedIfNeeded();
@@ -163,13 +183,15 @@ export class LocalStorageProvider implements IDataProvider {
     this.ensureSeeded();
     const user = lsRead<UserView>(LS_KEYS.CURRENT_USER);
     const key = user ? `${LS_KEYS.FAVORITES}:${user.id}` : LS_KEYS.FAVORITES;
-    return lsRead<FavoritesState>(key) ?? { workoutIds: [], videoIds: [] };
+    return lsRead<FavoritesState>(key) ?? { workoutIds: [], videoIds: [], routineIds: [] };
   }
 
-  async saveFavorites(favorites: FavoritesState): Promise<void> {
+  async saveFavorites(favorites: FavoritesState): Promise<boolean> {
+    const userId = await this.getCurrentUser().then((user) => user?.id ?? 0);
     const user = lsRead<UserView>(LS_KEYS.CURRENT_USER);
-    const key = user ? `${LS_KEYS.FAVORITES}:${user.id}` : LS_KEYS.FAVORITES;
+    const key = user ? `${LS_KEYS.FAVORITES}:${user.id}` : `${LS_KEYS.FAVORITES}:${userId}`;
     lsWrite(key, favorites);
+    return true;
   }
 
   // ── User Routines ────────────────────────────────────────────────────────────

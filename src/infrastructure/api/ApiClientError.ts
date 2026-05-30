@@ -26,7 +26,13 @@ export class ApiClientError extends Error {
 }
 
 export function isApiClientError(error: unknown): error is ApiClientError {
-  return error instanceof ApiClientError;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    "status" in error &&
+    (error as any).name === "ApiClientError"
+  );
 }
 
 export function getUserErrorMessage(error: unknown, fallback = "Ocurrio un error inesperado"): string {

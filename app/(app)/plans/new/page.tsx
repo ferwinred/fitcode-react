@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { routineService } from "@/src/services";
+import { authService, routineService } from "@/src/services";
 import type { RoutineView } from "@/lib/types";
 import { usePlans } from "@/context/plan-context";
 import { useRouter } from "next/dist/client/components/navigation";
@@ -48,11 +48,27 @@ export default function NewPlanPage() {
   const [otherPrefs, setOtherPrefs] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingRoutines, setLoadingRoutines] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setLoadingRoutines(true);
+
     routineService.getAll().then(setRoutines);
+
+    authService
+      .getCurrentUser()
+      .then((user) => {
+        if (user) {
+          setCurrentUserId(user.id);
+        } else {
+          console.warn("No hay usuario logueado");
+        }
+      })
+      .catch((error) => {
+        console.warn("Error al obtener el usuario actual:", error);
+      });
+
     setLoading(false);
     setLoadingRoutines(false);
   }, []);
@@ -66,16 +82,20 @@ export default function NewPlanPage() {
     setLevel(value);
 
     setLoadingRoutines(true);
-    console.log("Filtrando rutinas por nivel:", routines);
 
-    const filteredRoutines = routines.filter((r) => r.difficulty.toLowerCase() === value.toLowerCase());
-    setRoutines(filteredRoutines);
-
-    console.log("Nivel seleccionado:", value);
-    console.log("Rutinas filtradas:", filteredRoutines); // Verifica las rutinas después de filtrar
+    routineService
+      .getRoutinesByLevel(value)
+      .then((filtered) => {
+        console.log(`Rutinas filtradas por nivel "${value}":`, filtered);
+        setRoutines(filtered);
+        setLoadingRoutines(false);
+      })
+      .catch((error) => {
+        console.error("Error al filtrar rutinas por nivel:", error);
+        setLoadingRoutines(false);
+      });
 
     setLoadingRoutines(false);
-
   };
 
   const handleSubmit = () => {
@@ -88,17 +108,21 @@ export default function NewPlanPage() {
       routineIds: selected,
     });
 
+    if (!currentUserId) {
+      alert("No se pudo crear el plan porque no hay un usuario logueado.");
+      return;
+    }
+
     createPlanManual({
-      routine_id: 1, // Reemplazar con el ID de la rutina seleccionada
-      user_id: 1, // Reemplazar con el ID del usuario
+      routines_id: selected,
+      user_id: currentUserId,
       payload: {
         title: planName,
         description: planDescription,
         difficulty: level,
-        routines: routines.filter((r) => selected.includes(r.id)),
-        is_public: false,
+        isPublic: 0,
         metadata: null,
-        thumbnail_url: null,
+        thumbnailUrl: null,
       },
     });
     alert("Plan creado exitosamente!");
@@ -110,9 +134,14 @@ export default function NewPlanPage() {
     alert("Funcionalidad de generación con IA aún no implementada");
     setLoading(true);
 
+    if (!currentUserId) {
+      alert("No se pudo crear el plan con IA porque no hay un usuario logueado.");
+      setLoading(false);
+      return;
+    }
+
     createPlanAI({
-      routine_id: 1, // Reemplazar con el ID de la rutina seleccionada
-      user_id: 1, // Reemplazar con el ID del usuario
+      user_id: currentUserId, // Reemplazar con el ID del usuario
       preferences: {
         goal: goal,
         level: level,
@@ -125,13 +154,11 @@ export default function NewPlanPage() {
         title: `Plan IA - ${new Date().toLocaleDateString()}`,
         description: "Plan generado por IA basado en tus preferencias",
         difficulty: level,
-        routines: [], // El backend debería llenar esto con rutinas generadas
-        is_public: false,
+        isPublic: 0,
         metadata: null,
-        thumbnail_url: null,
+        thumbnailUrl: null,
       },
     });
-    alert("Plan creado exitosamente!");
     setLoading(false);
     router.push("/plans");
   };
@@ -248,54 +275,61 @@ export default function NewPlanPage() {
             </Select>
           </div>
 
-          <div>
-            <p className="font-semibold text-sm mb-3">Selecciona rutinas</p>
-            <div className="space-y-2">
-              {routines.map((r) => {
-                const isSelected = selected.includes(r.id);
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => toggleRoutine(r.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
-                      isSelected
-                        ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20"
-                        : "border-border hover:border-amber-200"
-                    }`}
-                  >
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                      {r.thumbnail_url ? (
-                        <Image
-                          src={r.thumbnail_url}
-                          alt={r.title}
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{r.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {r.duration_minutes} min · {r.workouts_count} ejercicios
-                      </p>
-                    </div>
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+          {loadingRoutines ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : (
+            <div>
+              <p className="font-semibold text-sm mb-3">Selecciona rutinas</p>
+              <div className="space-y-2">
+                {routines.map((r) => {
+                  const isSelected = selected.includes(r.id);
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => toggleRoutine(r.id)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                         isSelected
-                          ? "bg-amber-500 border-amber-500"
-                          : "border-muted-foreground"
+                          ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20"
+                          : "border-border hover:border-amber-200"
                       }`}
                     >
-                      {isSelected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                        {r.thumbnail_url ? (
+                          <Image
+                            src={r.thumbnail_url}
+                            alt={r.title}
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{r.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {r.duration_minutes} min · {r.workouts_count}{" "}
+                          ejercicios
+                        </p>
+                      </div>
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          isSelected
+                            ? "bg-amber-500 border-amber-500"
+                            : "border-muted-foreground"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           <Button
             className="w-full bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl"

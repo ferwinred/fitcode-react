@@ -61,6 +61,7 @@ type ApiRoutine = {
   isPublic?: number | boolean | null;
   metadata: string | Record<string, unknown> | null;
   thumbnailUrl: string | null;
+  workouts: ApiWorkout[];
   createdAt: string;
   updatedAt: string | null;
 };
@@ -194,6 +195,13 @@ export class ApiProvider implements IDataProvider {
     }
   }
 
+  async getRoutinesByLevel(level: string): Promise<RoutineView[]> {
+    const routines = asArray(await this.http.get<ApiRoutine[] | PageResponse<ApiRoutine>>(`/routines?difficulty=${encodeURIComponent(level.toLowerCase())}`))
+      .map((routine) => this.mapRoutine(routine));
+      console.log(`Fetched routines for level "${level}":`, routines);
+    return routines;
+  }
+
   async getVideos(params?: { free?: boolean; limit?: number }): Promise<WorkoutVideoView[]> {
     const qs = new URLSearchParams();
     if (params?.free !== undefined) qs.set("free", String(params.free));
@@ -235,12 +243,17 @@ export class ApiProvider implements IDataProvider {
   async saveFavorites(favorites: FavoritesState): Promise<boolean> {
     const userId = await this.getCurrentUser().then((user) => user?.id ?? 0);
 
-    const favoritesToSave = favorites.workoutIds.map((id) => ({ type: "workout", target_id: id, user_id: userId }))
-      .concat(favorites.videoIds.map((id) => ({ type: "video", target_id: id, user_id: userId })))
-      .concat(favorites.routineIds.map((id) => ({ type: "routine", target_id: id, user_id: userId })));
+    const favoritesToSave = favorites.workoutIds.length > 0 ? favorites.workoutIds.map((id) => ({ type: "workout", targetId: id, userId: userId })) : [];
+    if (favorites.videoIds.length > 0) {
+      favoritesToSave.concat(favorites.videoIds.map((id) => ({ type: "video", targetId: id, userId: userId })));
+    }
+    if (favorites.routineIds.length > 0) {
+      favoritesToSave.concat(favorites.routineIds.map((id) => ({ type: "routine", targetId: id, userId: userId })));
+    }
 
+      console.log("Saving favorites for userId:", userId, "Favorites to save:", favoritesToSave, "Full favorites state:", favorites);
     favoritesToSave.forEach((fav) => {
-        this.http.post<Favorite[]>(`/favorites/${userId}`, { body: fav }).then(() => {
+        this.http.post<Favorite[]>(`/favorites/${userId}`, { type: fav.type, targetId: fav.targetId }).then(() => {
         }).catch((error) => {
           console.error("Error saving favorites:", error);
           return false;
@@ -251,12 +264,12 @@ export class ApiProvider implements IDataProvider {
 
   }
 
-  async createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
-    await this.http.post(`/users/${userId}/plans/manual`, { body: { ...payload, routine_id: routineId } });
+  async createManualPlan(routineId: number[], userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">): Promise<void> {
+    await this.http.post(`/plans/manual`, { ...payload, userId: userId, routineIds: routineId });
   }
 
-  async createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
-    await this.http.post(`/users/${userId}/plans/ai`, { body: { ...payload, routine_id: routineId, preferences } });
+  async createAIPlan(userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">): Promise<void> {
+    await this.http.post(`/plans/ai`, { ...payload, userId: userId, preferences });
   }
 
   async getPlans(params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]> {
@@ -292,6 +305,14 @@ export class ApiProvider implements IDataProvider {
 
   async getProgress(sessionId: number): Promise<UserWorkoutProgress[]> {
     return this.http.get<UserWorkoutProgress[]>(`/user-workout-progress/session/${sessionId}`);
+  }
+
+  async createProgress(data: Omit<UserWorkoutProgress, "id" | "created_at" | "updated_at">): Promise<UserWorkoutProgress> {
+    return this.http.post<UserWorkoutProgress>(`/user-workout-progress`, data);
+  }
+
+  async updateProgress(progressId: number, data: Partial<UserWorkoutProgress>): Promise<void> {
+    await this.http.put(`/user-workout-progress/${progressId}`, { data });
   }
 
   async getStreak(userId: number): Promise<Streak | null> {
@@ -380,6 +401,7 @@ export class ApiProvider implements IDataProvider {
       metadata,
       created_at: routine.createdAt,
       updated_at: routine.updatedAt,
+      workouts: routine.workouts ? routine.workouts.map((w) => this.mapWorkout(w)) : [],
       workouts_count: Number(metadata?.workouts_count ?? 0),
       categories: Array.isArray(metadata?.categories) ? metadata.categories.map(String) : [],
       rating: Number(metadata?.rating ?? 0),

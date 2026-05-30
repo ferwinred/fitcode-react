@@ -11,18 +11,48 @@ import { DifficultyBadge, FreeBadge } from "@/components/badges";
 import { routineService, workoutService, userRoutineService } from "@/src/services";
 import { useAuth } from "@/context/auth-context";
 import type { RoutineView, WorkoutView, UserRoutine } from "@/lib/types";
+import { isApiClientError } from "@/src/infrastructure/api/ApiClientError";
+import { ApiProvider } from "@/src/infrastructure/api/ApiProvider";
 
 export default function RoutineDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [routine,     setRoutine]     = useState<RoutineView | null>(null);
   const [exercises,   setExercises]   = useState<WorkoutView[]>([]);
   const [userRoutine, setUserRoutine] = useState<UserRoutine | null>(null);
 
   useEffect(() => {
-    routineService.getById(Number(id)).then(setRoutine);
-    workoutService.getAll().then((all) => setExercises(all.slice(0, 5)));
+    try {
+      routineService.getById(Number(id)).then((r) => {
+        if (!r) {
+          alert("Rutina no encontrada");
+          return;
+        }
+        setRoutine(r);
+        setExercises(r.workouts);
+        console.log("Rutina y ejercicios cargados:", r, r.workouts);
+      }).catch((error) => {
+        console.error("Error fetching routine:", error);
+        if (isApiClientError(error)) {
+          if (error.status === 401) {
+            console.log("Token expirado. Redirigiendo al login...");
+            logout();
+          }
+        } else {
+          alert("An unexpected error occurred while fetching the routine.");
+        }
+      }
+      );
+      
+    } catch (error) { 
+      if (isApiClientError(error)) {
+        if (error.status === 401) {
+          logout();
+        }
+      }
+    }
+
   }, [id]);
 
   useEffect(() => {
@@ -109,7 +139,7 @@ export default function RoutineDetailPage({ params }: { params: Promise<{ id: st
           <div>
             <h2 className="font-bold text-lg mb-3">Ejercicios</h2>
             <div className="space-y-2">
-              {exercises.slice(0, routine.workouts_count).map((w, i) => (
+              {exercises.map((w, i) => (
                 <Link key={w.id} href={`/workouts/${w.id}`}>
                   <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors group">
                     <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">

@@ -41,8 +41,8 @@ const initialState: PlansState = { routineIds: [], plans: [] };
 
 interface PlansContextValue {
   plans: PlansState;
-  createPlanManual: (data: { routine_id: number; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }) => Promise<void>;
-  createPlanAI: (data: { routine_id: number; user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }) => Promise<void>;
+  createPlanManual: (data: { routines_id: number[]; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">  }) => Promise<void>;
+  createPlanAI: (data: { user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines"> }) => Promise<void>;
   getPlanById: (id: number) => Promise<PlanView | null>;
   updatePlan: (id: number, data: Partial<Plan>) => Promise<void>;
   deletePlan: (id: number) => Promise<void>;
@@ -76,7 +76,7 @@ export const PlansProvider = ({ children }: { children: React.ReactNode }) => {
       });
   }, []);
 
-  const createPlanManual = async (data: { routine_id: number; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }) => {
+  const createPlanManual = async (data: { routines_id: number[]; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">  }) => {
     try {
       await planService.createManual(data);
     } catch (error) {
@@ -84,7 +84,7 @@ export const PlansProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const createPlanAI = async (data: { routine_id: number; user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }) => {
+  const createPlanAI = async (data: { user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines"> }) => {
     try {
       await planService.createAI(data);
     } catch (error) {

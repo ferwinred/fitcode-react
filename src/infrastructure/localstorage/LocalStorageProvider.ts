@@ -42,23 +42,62 @@ function lsRemove(key: string): void {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export class LocalStorageProvider implements IDataProvider {
-  createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
-    throw new Error("Method not implemented.");
+  getRoutinesByLevel(level: string): Promise<RoutineView[]> {
+    let result = [...mockRoutines];
+    if (level) result = result.filter((r) => r.difficulty === level);
+    return Promise.resolve(result);
   }
-  createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void> {
-    throw new Error("Method not implemented.");
+  createManualPlan(routineId: number[], userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routine">): Promise<void> {
+    this.ensureSeeded();
+    const all = lsRead<Plan[]>(LS_KEYS.PLANS) ?? [];
+    const newPlan: Plan = {
+      id: Date.now(),
+      ...payload, 
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    lsWrite(LS_KEYS.PLANS, [...all, newPlan]);
+    return Promise.resolve();
+  }
+  createAIPlan( userId: number, preferences: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routine">): Promise<void> {
+    this.ensureSeeded();
+    const all = lsRead<Plan[]>(LS_KEYS.PLANS) ?? [];
+    const newPlan: Plan = {
+      id: Date.now(),
+      ...(payload),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    lsWrite(LS_KEYS.PLANS, [...all, newPlan]);
+    return Promise.resolve();
   }
   getPlans(params?: { userId: number; free?: boolean; limit?: number; }): Promise<PlanView[]> {
-    throw new Error("Method not implemented.");
+    this.ensureSeeded();
+    let result = lsRead<PlanView[]>(LS_KEYS.PLANS) ?? [];
+    if (params?.free !== undefined) result = result.filter((p) => p.is_free === params.free);
+    if (params?.limit !== undefined) result = result.slice(0, params.limit);
+    return Promise.resolve(result);
   }
   getPlanById(id: number): Promise<PlanView | null> {
-    throw new Error("Method not implemented.");
+    this.ensureSeeded();
+    const all = lsRead<PlanView[]>(LS_KEYS.PLANS) ?? [];
+    return Promise.resolve(all.find((p) => p.id === id) ?? null);
   }
   updatePlan(id: number, data: Partial<Plan>): Promise<void> {
-    throw new Error("Method not implemented.");
+    this.ensureSeeded();
+    const all = lsRead<Plan[]>(LS_KEYS.PLANS) ?? [];
+    const index = all.findIndex((p) => p.id === id);
+    if (index === -1) return Promise.reject(new Error("Plan no encontrado"));
+    all[index] = { ...all[index], ...data, updated_at: new Date().toISOString() };
+    lsWrite(LS_KEYS.PLANS, all);
+    return Promise.resolve();
   }
   deletePlan(id: number): Promise<void> {
-    throw new Error("Method not implemented.");
+    this.ensureSeeded();
+    const all = lsRead<Plan[]>(LS_KEYS.PLANS) ?? [];
+    const filtered = all.filter((p) => p.id !== id);
+    lsWrite(LS_KEYS.PLANS, filtered);
+    return Promise.resolve();
   }
 
   private ensureSeeded(): void {

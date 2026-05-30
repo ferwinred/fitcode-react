@@ -43,7 +43,7 @@ export interface IDataProvider {
   // ── Routines ──────────────────────────────────────────────────────────────
   getRoutines(params?: { free?: boolean; limit?: number }): Promise<RoutineView[]>;
   getRoutineById(id: number): Promise<RoutineView | null>;
-
+  getRoutinesByLevel(level: string): Promise<RoutineView[]>;
   // ── Videos ────────────────────────────────────────────────────────────────
   getVideos(params?: { free?: boolean; limit?: number }): Promise<WorkoutVideoView[]>;
   getVideoById(id: number): Promise<WorkoutVideoView | null>;
@@ -53,8 +53,8 @@ export interface IDataProvider {
   saveFavorites(favorites: FavoritesState): Promise<boolean>;
 
   // ── Plans ───────────────────────────────────────────────────────────────
-  createManualPlan(routineId: number, userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" >): Promise<void>;
-  createAIPlan(routineId: number, userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at">): Promise<void>;
+  createManualPlan(routineId: number[], userId: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">): Promise<void>;
+  createAIPlan(userId: number, preferences?: Record<string, unknown>, payload?: Omit<Plan, "id" | "created_at" | "updated_at" | "routines">): Promise<void>;
   getPlans(params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]>;
   getPlanById(id: number): Promise<PlanView | null>;
   updatePlan(id: number, data: Partial<Plan>): Promise<void>;
@@ -69,6 +69,8 @@ export interface IDataProvider {
 
   // ── Progress ──────────────────────────────────────────────────────────────
   getProgress(sessionId: number): Promise<UserWorkoutProgress[]>;
+  updateProgress(progressId: number, data: Partial<UserWorkoutProgress>): Promise<void>;
+  createProgress(data: Omit<UserWorkoutProgress, "id" | "created_at" | "updated_at">): Promise<UserWorkoutProgress>;
 
   // ── Streaks ───────────────────────────────────────────────────────────────
   getStreak(userId: number): Promise<Streak | null>;

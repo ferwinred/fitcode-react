@@ -24,7 +24,7 @@ export default function WorkoutDetailPage({ params }: { params: Promise<{ id: st
   const [currentSet, setCurrentSet] = useState(1);
   const [phase, setPhase]           = useState<"work" | "rest" | "done">("work");
   const [running, setRunning]       = useState(false);
-  const restSeconds = workout?.rest_seconds ?? 60;
+  const restSeconds = 15;
   const sets        = workout?.sets ?? 3;
   const [timeLeft, setTimeLeft]     = useState(restSeconds);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -50,6 +50,14 @@ export default function WorkoutDetailPage({ params }: { params: Promise<{ id: st
   const reset = () => {
     setRunning(false); setCurrentSet(1); setPhase("work"); setTimeLeft(restSeconds);
     if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const handleRunning = () => {
+    if (phase === "done") {
+      
+      return;
+    }
+    setRunning((r) => !r);
   };
 
   if (!workout) return <div className="flex items-center justify-center h-64 text-muted-foreground">Cargando...</div>;
@@ -142,7 +150,7 @@ export default function WorkoutDetailPage({ params }: { params: Promise<{ id: st
                 <Button variant="outline" size="icon" onClick={reset} className="rounded-full w-10 h-10">
                   <RotateCcw className="w-4 h-4" />
                 </Button>
-                <Button size="lg" onClick={() => setRunning((r) => !r)} disabled={phase === "done"}
+                <Button size="lg" onClick={() => handleRunning()} disabled={phase === "done"}
                   className="rounded-full px-8 bg-amber-500 hover:bg-amber-400 text-white font-bold">
                   {running ? <><Pause className="w-4 h-4 mr-1" />Pausar</> : <><Play className="w-4 h-4 mr-1" />Iniciar</>}
                 </Button>

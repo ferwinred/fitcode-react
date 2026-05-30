@@ -11,15 +11,26 @@ import { workoutService } from "@/src/services";
 import { mockCategories } from "@/lib/mock-data";
 import { useFavorites } from "@/context/favorites-context";
 import type { WorkoutView } from "@/lib/types";
+import { isApiClientError } from "@/src/infrastructure/api/ApiClientError";
+import { useAuth } from "@/context/auth-context";
 
 export default function WorkoutsPage() {
+  const { logout } = useAuth();
   const { isWorkoutFavorite, toggleWorkout } = useFavorites();
   const [workouts, setWorkouts]   = useState<WorkoutView[]>([]);
   const [search, setSearch]       = useState("");
   const [category, setCategory]   = useState<number | null>(null);
 
   useEffect(() => {
-    workoutService.getAll().then(setWorkouts);
+    try{
+      workoutService.getAll().then(setWorkouts);
+    } catch (error) {
+      if (isApiClientError(error)) {
+        if (error.status === 401) {
+          logout();
+        }
+      }
+    }
   }, []);
 
   const filtered = workouts.filter((w) => {

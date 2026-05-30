@@ -6,12 +6,10 @@ import Image from "next/image";
 import { Plus, Sparkles, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DifficultyBadge } from "@/components/badges";
+import { DifficultyBadge, FreeBadge } from "@/components/badges";
 import { useAuth } from "@/context/auth-context";
-import { userRoutineService } from "@/src/services";
-import type { UserRoutine } from "@/lib/types";
-
-const asView = (ur: UserRoutine) => ur.routine as import("@/lib/types").RoutineView | undefined;
+import { planService, userRoutineService } from "@/src/services";
+import type { PlanView, UserRoutine } from "@/lib/types";
 
 const statusLabel: Record<string, string> = {
   active:    "Activo",
@@ -29,7 +27,8 @@ const statusColor: Record<string, string> = {
 
 export default function PlansPage() {
   const { user } = useAuth();
-  const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
+  const [planRoutines, setPlanRoutines] = useState<UserRoutine[]>([]);
+  const [plans, setPlans] = useState<PlanView[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,8 +36,19 @@ export default function PlansPage() {
       setLoading(false);
       return;
     }
-    userRoutineService.getByUser(user.id).then(setUserRoutines);
+    setLoading(true);
+
+    userRoutineService.getByUser(user.id).then(setPlanRoutines);
+    planService.getPlans({ userId: user.id }).then((data) => {
+      setPlans(data);
+      setLoading(false);
+    }).catch((error) => {
+      console.error("Error fetching plans:", error);
+      setLoading(false);
+    });
+
     setLoading(false);
+
   }, [user]);
 
   return (
@@ -63,7 +73,7 @@ export default function PlansPage() {
         </Button>
       </div>
 
-      {userRoutines.length === 0 && (
+      {plans.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center space-y-3">
             <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto" />
@@ -77,49 +87,42 @@ export default function PlansPage() {
       )}
 
       <div className="space-y-4">
-        {userRoutines.map((ur) => {
-          const routine = asView(ur);
+        {plans.map((plan) => {
           return (
-            <Card key={ur.id} className="hover:shadow-md transition-shadow">
+            <Card key={plan.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  {routine?.thumbnail_url && (
+                  {plan?.thumbnailUrl ? (
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
-                      <Image src={routine.thumbnail_url} alt={routine.title ?? ""} fill sizes="64px" className="object-cover" />
+                      <Image src={plan.thumbnailUrl} alt={plan.title ?? ""} fill sizes="64px" className="object-cover" />
                     </div>
-                  )}
+                  ) : <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                      <Image src="/images/no-image.jpg" alt={plan.title ?? ""} fill sizes="64px" className="object-cover" />
+                    </div>}
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-100 text-blue-600 dark:bg-blue-950/30`}>
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold">{routine?.title}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[ur.status]}`}>
-                          {statusLabel[ur.status]}
-                        </span>
-                        {routine && <DifficultyBadge difficulty={routine.difficulty ?? "beginner"} />}
+                        <p className="font-semibold">{plan?.title}</p>
+                        {plan?.difficulty && <DifficultyBadge difficulty={plan.difficulty ?? "beginner"} />}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{routine?.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {routine?.duration_minutes} min · {routine?.workouts_count} ejercicios
-                        {ur.start_date && ` · Inicio: ${ur.start_date}`}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{plan?.description}</p>
+                      <h3>Rutinas</h3>
+                      {plan.routines.length > 0 && (
+                        <p className="text-sm text-muted-foreground mt-0.5">{plan.routines.length} rutina{plan.routines.length > 1 ? "s" : ""}</p>
+                      )}
                       {/* Progress bar */}
-                      <div className="mt-2 space-y-1">
+                       <div className="mt-2 space-y-1">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">Progreso</span>
-                          <span className="font-semibold text-amber-600">{ur.progress_percent}%</span>
+                          <span className="font-semibold text-amber-600">{planRoutines.reduce((acc, routine) => acc + routine.progress_percent, 0) / planRoutines.length}%</span>
                         </div>
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-400 rounded-full" style={{ width: `${ur.progress_percent}%` }} />
+                          <div className="h-full bg-amber-400 rounded-full" style={{ width: `${planRoutines.reduce((acc, routine) => acc + routine.progress_percent, 0) / planRoutines.length}%` }} />
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {routine?.categories?.map((c) => (
-                          <span key={c} className="text-xs bg-muted px-2 py-0.5 rounded-full">{c}</span>
-                        ))}
-                      </div>
+                      </div> 
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">

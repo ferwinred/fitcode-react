@@ -10,7 +10,8 @@ import { getUserErrorMessage } from "@/src/infrastructure/api/ApiClientError";
 type FavoritesAction =
   | { type: "INIT"; payload: FavoritesState }
   | { type: "TOGGLE_WORKOUT"; id: number }
-  | { type: "TOGGLE_VIDEO"; id: number };
+  | { type: "TOGGLE_VIDEO"; id: number }
+  | { type: "TOGGLE_ROUTINE"; id: number };
 
 function favoritesReducer(state: FavoritesState, action: FavoritesAction): FavoritesState {
   switch (action.type) {
@@ -30,6 +31,13 @@ function favoritesReducer(state: FavoritesState, action: FavoritesAction): Favor
           ? state.videoIds.filter((id) => id !== action.id)
           : [...state.videoIds, action.id],
       };
+    case "TOGGLE_ROUTINE":
+      return {
+        ...state,
+        routineIds: state.routineIds.includes(action.id)
+          ? state.routineIds.filter((id) => id !== action.id)
+          : [...state.routineIds, action.id],
+      };
   }
 }
 
@@ -43,6 +51,8 @@ interface FavoritesContextValue {
   toggleVideo: (id: number) => void;
   isWorkoutFavorite: (id: number) => boolean;
   isVideoFavorite: (id: number) => boolean;
+  toggleRoutine: (id: number) => void;
+  isRoutineFavorite: (id: number) => boolean;
 }
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
@@ -89,8 +99,17 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
     [favorites.videoIds]
   );
 
+  const toggleRoutine = useCallback((id: number) => {
+    dispatch({ type: "TOGGLE_ROUTINE", id });
+  }, []);
+
+  const isRoutineFavorite = useCallback(
+    (id: number) => favorites.routineIds.includes(id),
+    [favorites.routineIds]
+  );
+
   return (
-    <FavoritesContext.Provider value={{ favorites, toggleWorkout, toggleVideo, isWorkoutFavorite, isVideoFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, toggleWorkout, toggleVideo, isWorkoutFavorite, isVideoFavorite, toggleRoutine, isRoutineFavorite }}>
       {children}
     </FavoritesContext.Provider>
   );

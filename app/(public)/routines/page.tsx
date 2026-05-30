@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Clock, Dumbbell, Star } from "lucide-react";
+import { Search, Clock, Dumbbell, Star, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DifficultyBadge, FreeBadge } from "@/components/badges";
 import { routineService } from "@/src/services";
 import type { RoutineView } from "@/lib/types";
+import { useFavorites } from "@/context/favorites-context";
+import { ApiClientError, isApiClientError } from "@/src/infrastructure/api/ApiClientError";
+import { useAuth } from "@/context/auth-context";
 
 type Difficulty = "beginner" | "intermediate" | "advanced";
 const difficultyFilters: { label: string; value: Difficulty | null }[] = [
@@ -19,12 +22,27 @@ const difficultyFilters: { label: string; value: Difficulty | null }[] = [
 ];
 
 export default function RoutinesPage() {
+  const { logout } = useAuth();
+  const { isRoutineFavorite, toggleRoutine } = useFavorites();
   const [routines, setRoutines]     = useState<RoutineView[]>([]);
   const [search, setSearch]         = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
 
   useEffect(() => {
-    routineService.getAll({ free: true }).then(setRoutines);
+    try {
+      routineService.getAll({ free: true }).then(setRoutines);
+    } catch (error) {
+      console.error("Error fetching routines:", error);
+      if (isApiClientError(error)) {
+         if (error.status === 401) {
+          // Aquí podrías agregar lógica para manejar la expiración del token, como redirigir al login
+          console.log("Token expirado. Redirigiendo al login...");
+          logout();
+        }
+      } else {
+        alert("An unexpected error occurred while fetching routines.");
+      }
+    }
   }, []);
 
   const filtered = routines.filter((r) => {
@@ -65,6 +83,7 @@ export default function RoutinesPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((r) => (
+          <div key={r.id} className="relative group">
           <Link key={r.id} href={`/routines/${r.id}`}>
             <Card className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group h-full">
               <div className="relative h-48 bg-muted overflow-hidden">
@@ -95,6 +114,14 @@ export default function RoutinesPage() {
               </CardContent>
             </Card>
           </Link>
+          {/* Favorite button */}
+            <button
+              onClick={(e) => { e.preventDefault(); toggleRoutine(r.id); }}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-card/90 flex items-center justify-center shadow hover:scale-110 transition-transform z-10"
+            >
+              <Heart className={`w-4 h-4 ${isRoutineFavorite(r.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+            </button>
+              </div>      
         ))}
       </div>
     </div>

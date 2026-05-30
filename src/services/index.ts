@@ -34,6 +34,7 @@ export const workoutService = {
 export const routineService = {
   getAll:  (params?: { free?: boolean; limit?: number }): Promise<RoutineView[]>    => p().getRoutines(params),
   getById: (id: number):                                  Promise<RoutineView | null> => p().getRoutineById(id),
+  getRoutinesByLevel: (level: string): Promise<RoutineView[]> => p().getRoutinesByLevel(level),
   getFree: (limit = 2):                                   Promise<RoutineView[]>    => p().getRoutines({ free: true, limit }),
 };
 
@@ -49,8 +50,8 @@ export const favoritesService = {
 };
 
 export const planService = {
-  createManual: (data: { routine_id: number; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }): Promise<void> => p().createManualPlan(data.routine_id, data.user_id, data.payload),
-  createAI:     (data: { routine_id: number; user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at"> }): Promise<void> => p().createAIPlan(data.routine_id, data.user_id, data.preferences, data.payload),
+  createManual: (data: { routines_id: number[]; user_id: number, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines"> }): Promise<void> => p().createManualPlan(data.routines_id, data.user_id, data.payload),
+  createAI:     (data: { user_id: number; preferences?: Record<string, unknown>, payload: Omit<Plan, "id" | "created_at" | "updated_at" | "routines"> }): Promise<void> => p().createAIPlan(data.user_id, data.preferences, data.payload),
   getPlans:     (params?: { userId: number; free?: boolean; limit?: number }): Promise<PlanView[]> => p().getPlans(params),
   getPlanById: (id: number): Promise<PlanView | null> => p().getPlanById(id),
   updatePlan: (id: number, data: Partial<Plan>): Promise<void> => p().updatePlan(id, data),

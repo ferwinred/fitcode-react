@@ -9,6 +9,8 @@ import { videoService } from "@/src/services";
 import { useFavorites } from "@/context/favorites-context";
 import { formatDuration } from "@/lib/mock-data";
 import type { WorkoutVideoView } from "@/lib/types";
+import { isApiClientError } from "@/src/infrastructure/api/ApiClientError";
+import { useAuth } from "@/context/auth-context";
 
 function getYoutubeVideoId(url?: string) {
   if (!url) return null;
@@ -23,12 +25,24 @@ function getYoutubeVideoId(url?: string) {
 
 export default function VideosPage() {
   const { isVideoFavorite, toggleVideo } = useFavorites();
+  const { logout } = useAuth();
 
   const [videos, setVideos] = useState<WorkoutVideoView[]>([]);
   const [hoveredVideo, setHoveredVideo] = useState<number | null>(null);
 
   useEffect(() => {
-    videoService.getAll().then(setVideos);
+    try {
+      videoService.getAll().then(setVideos);
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      if (isApiClientError(error)) {
+        if (error.status === 401) {
+          // Aquí podrías agregar lógica para manejar la expiración del token, como redirigir al login
+          console.log("Token expirado. Redirigiendo al login...");
+          logout();
+        }
+      }
+    }
   }, []);
 
   return (
@@ -129,7 +143,7 @@ export default function VideosPage() {
                 className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-white/90 dark:bg-card/90 backdrop-blur flex items-center justify-center shadow-md hover:scale-110 transition-transform"
               >
                 <Heart
-                  className={`w-4 h-4 transition-colors ${
+                  className={`w-4 h-4 transition-colors cursor-pointer ${
                     isVideoFavorite(v.id)
                       ? "fill-red-500 text-red-500"
                       : "text-muted-foreground"

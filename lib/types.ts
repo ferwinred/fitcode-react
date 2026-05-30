@@ -107,6 +107,7 @@ export interface Routine {
   thumbnail_url: string | null;
   created_at: string;
   updated_at: string | null;
+  workouts: WorkoutView[];                        // join opcional con routine_workouts
 }
 
 // ─── routine_workouts ────────────────────────────────────────────────────────
@@ -133,9 +134,9 @@ export interface Plan {
   title: string;
   description: string | null;                // join opcional
   difficulty: string;
-  is_public: boolean;
+  isPublic: number;
   metadata: Record<string, unknown> | null;
-  thumbnail_url: string | null;
+  thumbnailUrl: string | null;
   created_at: string;
   updated_at: string | null;
   routines: Routine[];                        // join opcional con plan_routines

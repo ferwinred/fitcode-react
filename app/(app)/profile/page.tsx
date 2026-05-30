@@ -37,7 +37,7 @@ export default function ProfilePage() {
   }, [user]);
 
   const activeRoutines = userRoutines.filter((ur) => ur.status === "active");
-  const favCount = favorites.workoutIds.length + favorites.videoIds.length;
+  const favCount = favorites.workoutIds.length + favorites.videoIds.length + favorites.routineIds.length;
 
   const statItems = [
     { Icon: Dumbbell, val: String(activeRoutines.length), lbl: "Rutinas activas", color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/20" },
@@ -67,7 +67,7 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0">
+            <Button variant="outline" size="sm" className="shrink-0 cursor-pointer">
               <Settings className="w-4 h-4 mr-1" /> Editar
             </Button>
           </div>

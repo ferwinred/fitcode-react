@@ -17,6 +17,7 @@ const navLinks = [
   { href: "/routines", label: "Rutinas" },
   { href: "/videos", label: "Videos" },
   { href: "/community", label: "Comunidad" },
+  { href: "/statistics", label: "Estadísticas" },
 ];
 
 export default function Navbar() {

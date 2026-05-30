@@ -93,7 +93,7 @@ export default function RoutineDetailPage({ params }: { params: Promise<{ id: st
       {/* Header */}
       <div className="relative h-64 rounded-2xl overflow-hidden mb-8">
         <Image src={routine.thumbnail_url ?? ""} alt={routine.title} fill sizes="100vw" className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/70 to-black/20" />
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex gap-2 mb-2">
             <FreeBadge isFree={routine.is_free} />
